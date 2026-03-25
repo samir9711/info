@@ -32,6 +32,11 @@ class Vocabulary extends BaseModel
         'category_id' ,
     ];
 
+    protected array $fileAttributes = [
+        'image' => 'single',
+    ];
+
+
     public function category()
     {
         return $this->belongsTo(Category::class);

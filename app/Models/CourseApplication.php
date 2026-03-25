@@ -26,6 +26,11 @@ class CourseApplication extends BaseModel
         'reviewed_at' => 'datetime',
     ];
 
+    protected array $fileAttributes = [
+        'image' => 'single',
+    ];
+
+
     public function course()
     {
         return $this->belongsTo(Course::class);

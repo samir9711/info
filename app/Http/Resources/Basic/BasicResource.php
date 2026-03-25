@@ -75,7 +75,9 @@ class BasicResource extends JsonResource
 
         // id + is_deleted دائماً
         $this->result['id']         = $this->id;
+        $this->result['created_at'] = $this->created_at;
         $this->result['is_deleted'] = (bool) $this->deleted_at;
+
 
         return $this->result;
     }
