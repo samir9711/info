@@ -9,7 +9,7 @@ Route::get('/user', function (Request $request) {
 
 
 
-
+/*
 // Answer PUBLIC ROUTES
 Route::prefix('answer')->group(function () {
     Route::get('/all/paginated', [\App\Http\Controllers\Answer\AnswerController::class, 'allPaginated']);
@@ -289,3 +289,4 @@ Route::prefix('vocabulary')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\Vocabulary\VocabularyController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\Vocabulary\VocabularyController::class, 'deactivate']);
 });
+*/
