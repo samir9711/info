@@ -39,6 +39,8 @@ class ArticleService extends BasicCrudService
                 'intro'      => $data['intro'] ?? null,
                 'conclusion' => $data['conclusion'] ?? null,
                 'category_id' => $data['category_id'] ?? null,
+                'is_important' => $data['is_important'] ?? false,
+                'image'      => isset($data['image']) && is_string($data['image']) && $data['image'] !== '' ? $data['image'] : null,
             ]);
 
             $sections = $data['sections'] ?? [];
@@ -71,7 +73,9 @@ class ArticleService extends BasicCrudService
                 'title'      => $data['title'] ?? $article->title,
                 'intro'      => array_key_exists('intro', $data) ? $data['intro'] : $article->intro,
                 'conclusion' => array_key_exists('conclusion', $data) ? $data['conclusion'] : $article->conclusion,
-                'category_id' => array_key_exists('category_id', $data) ? $data['category_id'] : $article->category_id
+                'category_id' => array_key_exists('category_id', $data) ? $data['category_id'] : $article->category_id,
+                'is_important' => array_key_exists('is_important', $data) ? $data['is_important'] : $article->is_important,
+                'image'      => isset($data['image']) && is_string($data['image']) && $data['image'] !== '' ? $data['image'] : null,
             ]);
 
             $incoming = $data['sections'] ?? [];
