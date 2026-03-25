@@ -35,6 +35,8 @@ class StoreArticleRequest extends BasicRequest
             'conclusion.en' => ['nullable','string'],
 
             'category_id' => ['nullable','integer', Rule::exists('categories', 'id')],
+            'is_important' => ['nullable','boolean'],
+            'image' => ['nullable','string'],
 
             'sections' => ['nullable','array'],
             'sections.*.id' => ['nullable','integer', Rule::exists('article_sections', 'id')], // <-- added

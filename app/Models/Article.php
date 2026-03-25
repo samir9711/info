@@ -13,6 +13,8 @@ class Article extends BaseModel
         'intro' => 'intro',
         'conclusion' => 'conclusion',
         'category_id'=>'category_id',
+        'is_important'=>'is_important',
+        'image'=>'image',
     ];
 
     protected $casts = [
@@ -20,6 +22,7 @@ class Article extends BaseModel
         'intro' => 'array',
         'conclusion' => 'array',
         'category_id' => 'integer',
+        'is_important' => 'boolean'
     ];
 
 
@@ -27,11 +30,16 @@ class Article extends BaseModel
 
 
     protected array $filterable = [
-        'category_id'=>'int'
+        'category_id'=>'int',
+        'is_important'=>'bool',
     ];
 
     protected array $dynamicFilterColumns = [
         'category_id' ,
+        'is_important'
+    ];
+    protected array $fileAttributes = [
+        'image' => 'single',
     ];
 
     public function sections()
