@@ -25,7 +25,7 @@ class CourseService extends BasicCrudService
     }
 
 
-     public function create(BasicRequest $request): mixed
+    public function create(BasicRequest $request): mixed
     {
         $data = $request->validated();
 
@@ -53,4 +53,6 @@ class CourseService extends BasicCrudService
 
         return $this->resource::make($course->fresh()->load($this->relations));
     }
+
+
 }

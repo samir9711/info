@@ -31,6 +31,15 @@ class LessonView extends BaseModel
         'is_completed' => 'boolean',
         'last_viewed_at' => 'datetime',
     ];
+    public function lesson()
+    {
+        return $this->belongsTo(Lesson::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     //
 }

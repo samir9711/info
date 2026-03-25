@@ -31,6 +31,7 @@ class Lesson extends BaseModel
     protected array $fileAttributes = [
         'video_url' => 'single',
     ];
+    protected string $fileDisk = 'private';
 
 
     protected $search = ['title', 'content','conclusion'];

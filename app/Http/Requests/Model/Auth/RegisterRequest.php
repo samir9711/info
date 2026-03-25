@@ -17,8 +17,8 @@ class RegisterRequest extends BasicRequest
             'email'         => ['required','email','max:255'],
             'password'      => ['required','string','min:6','max:100','confirmed'],
             'gender'        => ['required',Rule::in(['male','female'])],
-            'country'       => ['required','string'],
-            'city'          => ['required','string'],
+            //'country'       => ['required','string'],
+            'city'          => ['nullable','string'],
             'birth_date'    => ['required','date_format:Y-m-d'],
 
             // قناة إرسال OTP

@@ -37,5 +37,10 @@ class Category extends BaseModel
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
+    public function scopeRoots($query)
+    {
+        return $query->whereNull('parent_id');
+    }
+
     //
 }

@@ -21,4 +21,24 @@ class CategoryService extends BasicCrudService
         $this->resource = CategoryResource::class;
         $this->relations = ['parent'];
     }
+
+    protected function allQuery(): object
+    {
+        $request = request();
+
+
+        $query = $this->model::withFilters()
+            ->with($this->relations)
+            ->orderBy('created_at', 'desc');
+
+
+        if ($request->filled('roots')) {
+            if ($request->boolean('roots')) {
+                $query->roots();
+            }
+            return $query;
+        }
+
+        return $query;
+    }
 }

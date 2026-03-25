@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
+use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Lesson\LessonController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
@@ -49,7 +50,7 @@ Route::prefix('admin')->group(function () {
     });
 
 
-    Route::prefix('vocabulary')->group(function () {
+    Route::prefix('vocabulary')->middleware('auth:admin')->group(function () {
         Route::get('/all/paginated', [VocabularyController::class, 'allPaginated']);
         Route::get('/all',           [VocabularyController::class, 'all']);
         Route::post('/show',         [VocabularyController::class, 'show']);
@@ -122,6 +123,16 @@ Route::prefix('admin')->group(function () {
         Route::post('/create',       [LessonController::class, 'store']);
         Route::post('/update',       [LessonController::class, 'update']);
         Route::delete('/destroy',    [LessonController::class, 'destroy']);
+    });
+
+
+    Route::prefix('course-application')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [CourseApplicationController::class, 'allPaginated']);
+        Route::get('/all',           [CourseApplicationController::class, 'all']);
+        Route::post('/show',         [CourseApplicationController::class, 'show']);
+        Route::post('/create',       [CourseApplicationController::class, 'store']);
+        Route::post('/update',       [CourseApplicationController::class, 'update']);
+        Route::delete('/destroy',    [CourseApplicationController::class, 'destroy']);
     });
 
 

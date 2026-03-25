@@ -12,11 +12,20 @@ class CourseApplicationResource extends BasicResource
 {
     public function toArray(Request $request): array
     {
-        return $this->initResource(
+        $data= $this->initResource(
             ModelColumnsService::getServiceFor(
                 CourseApplication::class
             )
         );
+
+        $data['applicant'] = $this->whenLoaded('applicant', function () {
+            return $this->applicant ? $this->applicant->toArray() : null;
+        });
+        $data['course'] = $this->whenLoaded('course', function () {
+            return $this->course ? $this->course->toArray() : null;
+        });
+
+        return $data;
     }
 
     protected function initResource($modelColumnsService): array

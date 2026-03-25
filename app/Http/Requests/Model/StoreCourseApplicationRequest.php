@@ -9,7 +9,7 @@ class StoreCourseApplicationRequest extends BasicRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    
+
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,9 +22,10 @@ class StoreCourseApplicationRequest extends BasicRequest
             'course_id' => 'required|integer|exists:courses,id',
             'applicant_id' => 'nullable|integer|exists:users,id',
             'message' => 'nullable|string',
-            'status' => 'required|integer',
+            'status' => 'nullable|integer',
             'reviewed_by' => 'nullable|integer|exists:users,id',
             'reviewed_at' => 'nullable|date_format:Y-m-d H:i:s',
+            'image' => 'required|string|max:255',
         ];
     }
 

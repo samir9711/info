@@ -139,4 +139,59 @@ class UploadController extends Controller
         }
     }
 
+    public function singleVideo(Request $request, string $folder)
+    {
+        try {
+
+            $rules = [
+                'file' => [
+                    'required',
+                    'file',
+                    'max:512000',
+                    function ($attribute, $value, $fail) {
+                        $allowedMime = [
+                            'video/mp4',
+                            'video/quicktime',
+                            'video/x-msvideo',
+                            'video/x-matroska',
+                            'video/webm',
+                            'video/ogg'
+                        ];
+
+                        $detected = $value->getMimeType();
+                        if (! in_array($detected, $allowedMime, true)) {
+                            $fail('الملف يجب أن يكون فيديو بصيغة مدعومة (MP4, MOV, AVI, MKV, WEBM, OGG).');
+                        }
+                    },
+                ],
+            ];
+
+            $messages = [
+                'file.required' => 'يرجى اختيار ملف فيديو للرفع.',
+                'file.file'     => 'الملف المرفوع غير صالح.',
+                'file.max'      => 'حجم الملف يجب ألا يتجاوز 500 ميجابايت.',
+            ];
+
+            $request->validate($rules, $messages);
+
+            if (! preg_match('/^[A-Za-z0-9_-]+$/', $folder)) {
+                return $this->requiredField('اسم المجلد غير صالح. مسموح فقط الحروف والأرقام والشرطة (-) والشرطة السفلية (_).');
+            }
+
+            $disk = 'private';
+            $ext = $request->file('file')->getClientOriginalExtension();
+            $filename = Str::uuid() . ($ext ? ('.' . $ext) : '');
+            $path = $request->file('file')->storeAs($folder, $filename, $disk);
+
+
+            return $this->apiResponse(
+                ['path' => $path],
+                true,
+                null,
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
 }

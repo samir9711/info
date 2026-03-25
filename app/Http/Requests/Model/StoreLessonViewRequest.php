@@ -9,27 +9,38 @@ class StoreLessonViewRequest extends BasicRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    
+
 
     /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules()
     {
         return [
-            'user_id' => 'required|integer|exists:users,id',
-            'lesson_id' => 'required|integer|exists:lessons,id',
-            'view_count' => 'required|integer',
-            'total_watch_seconds' => 'required|integer',
-            'last_watched_seconds' => 'nullable|integer',
-            'progress_percent' => 'required|integer',
-            'is_completed' => 'required|boolean',
-            'last_viewed_at' => 'nullable|date_format:Y-m-d H:i:s',
-            'device' => 'nullable|string|max:255',
-            'ip' => 'nullable|string|max:255',
+            'lesson_id' => ['required','integer','exists:lessons,id'],
+            // الموضع الحالي في الفيديو بالثواني (مطلوب لتتبع delta)
+            'last_watched_seconds' => ['nullable','integer','min:0'],
+            // الطول الكلي للدرس إن كان متاحاً (بالثواني)
+            'lesson_duration' => ['nullable','integer','min:1'],
+            'device' => ['nullable','string','max:200'],
+            'ip' => ['nullable','ip'],
+            'completed' => ['nullable','boolean'],
+            // لو أردت التحكم بزيادة view_count: client يرسل true/false
+            'count_as_new_view' => ['nullable','boolean'],
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        // بعض الـ clients قد يرسلون strings 'true'/'false'
+        if ($this->has('completed')) {
+            $this->merge(['completed' => filter_var($this->input('completed'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+        if ($this->has('count_as_new_view')) {
+            $this->merge(['count_as_new_view' => filter_var($this->input('count_as_new_view'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
     }
 
 }
