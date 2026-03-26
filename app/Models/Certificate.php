@@ -7,7 +7,8 @@ use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 
 class Certificate extends BaseModel
-{protected $fillable = [
+{
+    protected $fillable = [
         'user_id' => 'user_id',
         'course_id' => 'course_id',
         'meta' => 'meta',
@@ -16,7 +17,7 @@ class Certificate extends BaseModel
         'passing_mark' => 'passing_mark',
     ];
 
-protected $casts = [
+    protected $casts = [
         'user_id' => 'integer',
         'course_id' => 'integer',
         'meta' => 'array',

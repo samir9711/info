@@ -43,9 +43,18 @@ class Course extends BaseModel
 
 
     protected array $filterable = [
-        'category_id'=>'int',
-        'is_free'=>'bool',
-        'is_featured'=>'bool'
+        'category_id' => 'int',
+        'category_tree_id' => [
+            'column' => 'category_id',
+            'op' => 'tree',
+            'type' => 'int',
+        ],
+        'is_free' => 'bool',
+        'is_featured' => 'bool',
+    ];
+
+    protected array $treeFilterModels = [
+        'category_id' => Category::class,
     ];
 
     protected array $dynamicFilterColumns = [

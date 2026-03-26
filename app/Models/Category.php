@@ -21,7 +21,7 @@ class Category extends BaseModel
     ];
 
 
-     protected $search = ['name', 'description'];
+    protected $search = ['name', 'description'];
 
 
     protected array $filterable = [
@@ -41,6 +41,13 @@ class Category extends BaseModel
     {
         return $query->whereNull('parent_id');
     }
+
+
+    public function children()
+    {
+        return $this->hasMany(Category::class, 'parent_id');
+    }
+
 
     //
 }

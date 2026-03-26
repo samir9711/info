@@ -16,4 +16,25 @@ class FavoriteController extends FatherCrudController
         $this->createRequest = StoreFavoriteRequest::class;
         $this->updateRequest = StoreFavoriteRequest::class;
     }
+
+
+    public function toggle(Request $request)
+    {
+        try {
+            $data = $this->service::toggle($request);
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function mine(Request $request)
+    {
+        try {
+            $data = $this->service::myFavorites($request);
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
 }

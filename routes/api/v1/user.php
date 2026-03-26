@@ -10,6 +10,7 @@ use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\Faq\FaqController;
+use App\Http\Controllers\Favorite\FavoriteController;
 use App\Http\Controllers\Lesson\LessonController;
 use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\LessonView\LessonViewController;
@@ -159,6 +160,13 @@ Route::prefix('user')->name('user.')->group(function () {
     // تقدّم المستخدم لكورس
     Route::post('/courses/progress', [LessonViewController::class, 'userCourseProgress']);
 
+
+    });
+
+
+    Route::prefix('favorite')->middleware('auth:user')->group(function () {
+        Route::post('/toggle', [FavoriteController::class, 'toggle']);
+        Route::get('/mine', [FavoriteController::class, 'mine']);
 
     });
 

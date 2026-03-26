@@ -64,6 +64,9 @@ class BaseModel extends Model
      */
     protected array $dynamicFilterColumns = [];
 
+
+    protected array $treeFilterModels = [];
+
     /**
      * Allowed operators for dynamic filters:
      * eq     -> column = value
@@ -317,7 +320,27 @@ class BaseModel extends Model
             } elseif ($type === 'array') {
                 $val = is_array($val)
                     ? $val
-                    : (strlen((string)$val) ? explode(',', (string)$val) : []);
+                    : (strlen((string) $val) ? explode(',', (string) $val) : []);
+            }
+
+            if ($op === 'tree') {
+                $modelClass = $this->treeFilterModels[$column] ?? null;
+
+                if (is_array($modelClass)) {
+                    $modelClass = $modelClass['model'] ?? null;
+                }
+
+                if (!is_string($modelClass) || $modelClass === '') {
+                    continue;
+                }
+
+                $ids = $this->resolveTreeIds($modelClass, (int) $val);
+
+                if (!empty($ids)) {
+                    $query->whereIn($column, $ids);
+                }
+
+                continue;
             }
 
             if ($op === 'like') {
@@ -699,6 +722,27 @@ class BaseModel extends Model
                 break;
             }
 
+            case 'tree': {
+                $treeCfg = $this->treeFilterModels[$column] ?? null;
+
+                if (!$treeCfg || !isset($treeCfg['model'])) {
+                    break;
+                }
+
+                $ids = $this->resolveTreeIds(
+                    $treeCfg['model'],
+                    (int) $value,
+                    $treeCfg['key'] ?? 'id',
+                    $treeCfg['parent_key'] ?? 'parent_id'
+                );
+
+                if (!empty($ids)) {
+                    $query->whereIn($column, $ids);
+                }
+
+                break;
+            }
+
             case 'neq':
                 if ($negated) $value = substr($valueStr, 1);
                 $query->where($column, '!=', $value);
@@ -745,5 +789,29 @@ class BaseModel extends Model
                 $query->where($col, '<=', $params[$maxKey]);
             }
         }
+    }
+
+    protected function resolveTreeIds(string $modelClass, int $rootId, string $key = 'id', string $parentKey = 'parent_id'): array
+    {
+        $ids = [$rootId];
+        $queue = [$rootId];
+
+        while (!empty($queue)) {
+            $currentId = array_shift($queue);
+
+            $children = $modelClass::query()
+                ->where($parentKey, $currentId)
+                ->pluck($key)
+                ->all();
+
+            foreach ($children as $childId) {
+                if (!in_array($childId, $ids, true)) {
+                    $ids[] = $childId;
+                    $queue[] = $childId;
+                }
+            }
+        }
+
+        return $ids;
     }
 }
