@@ -48,6 +48,11 @@ class Category extends BaseModel
         return $this->hasMany(Category::class, 'parent_id');
     }
 
+    public function courses()
+    {
+        return $this->hasMany(Course::class, 'category_id');
+    }
+
 
     //
 }

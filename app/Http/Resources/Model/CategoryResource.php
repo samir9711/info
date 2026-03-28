@@ -22,6 +22,8 @@ class CategoryResource extends BasicResource
             return $this->parent ? $this->parent->toArray() : null;
         });
 
+        $data['courses_count'] = $this->courses_count ?? 0;
+
         return $data;
     }
 

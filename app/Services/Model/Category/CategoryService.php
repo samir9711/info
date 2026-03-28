@@ -28,7 +28,7 @@ class CategoryService extends BasicCrudService
 
 
         $query = $this->model::withFilters()
-            ->with($this->relations)
+            ->with($this->relations)->withCount('courses')
             ->orderBy('created_at', 'desc');
 
 

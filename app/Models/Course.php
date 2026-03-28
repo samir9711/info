@@ -73,5 +73,10 @@ class Course extends BaseModel
         return $this->belongsTo(Currency::class);
     }
 
+    public function lessons()
+    {
+        return $this->hasMany(Lesson::class);
+    }
+
     //
 }
