@@ -21,7 +21,15 @@ class CourseService extends BasicCrudService
         );
 
         $this->resource = CourseResource::class;
-        $this->relations = ['category','category.parent','currency','tags'];
+        $this->relations = ['category','category.parent','currency','tags','lessons'];
+    }
+
+    protected function allQuery(): object
+    {
+        return $this->model::withFilters()
+            ->with($this->relations)
+            ->withCount('lessons')
+            ->orderByDesc('created_at');
     }
 
 

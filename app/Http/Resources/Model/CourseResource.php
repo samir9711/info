@@ -27,6 +27,7 @@ class CourseResource extends BasicResource
         $data['tags'] = $this->whenLoaded('tags', function () {
             return $this->tags ? $this->tags->toArray() : null;
         });
+        $data['lessons_count'] = $this->lessons_count ?? 0;
         return $data;
     }
 
