@@ -26,6 +26,10 @@ class StoreLessonRequest extends BasicRequest
             'video_url' => 'nullable|string|max:255',
             'is_published' => 'required|boolean',
             'free_preview' => 'required|boolean',
+            'image' => 'nullable|string|max:255',
+
+            'sources'      => ['nullable', 'array'],
+            'sources.*'    => ['string', 'max:255'],
 
 
             'quizzes' => ['nullable','array'],

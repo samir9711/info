@@ -16,6 +16,8 @@ class Lesson extends BaseModel
         'video_url' => 'video_url',
         'is_published' => 'is_published',
         'free_preview' => 'free_preview',
+        'sources' => 'sources',
+        'image' => 'image',
     ];
 
     protected $casts = [
@@ -25,13 +27,18 @@ class Lesson extends BaseModel
         'conclusion' => 'array',
         'is_published' => 'boolean',
         'free_preview' => 'boolean',
+        'sources' => 'array',
     ];
 
 
     protected array $fileAttributes = [
         'video_url' => 'single',
+        'sources' => 'array',
+        'image' => 'single',
     ];
     protected string $fileDisk = 'private';
+
+    protected $hidden = ['video_url'];
 
 
     protected $search = ['title', 'content','conclusion'];

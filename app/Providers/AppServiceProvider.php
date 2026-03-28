@@ -11,6 +11,12 @@ class AppServiceProvider extends ServiceProvider
 {
 
      protected $facades = [
+    'LessonCommentService' => \App\Services\Model\LessonComment\LessonCommentService::class,
+
+    'QuizAttemptAnswerService' => \App\Services\Model\QuizAttemptAnswer\QuizAttemptAnswerService::class,
+
+    'QuizAttemptService' => \App\Services\Model\QuizAttempt\QuizAttemptService::class,
+
     'VocabularyService' => \App\Services\Model\Vocabulary\VocabularyService::class,
 
     'UserService' => \App\Services\Model\User\UserService::class,

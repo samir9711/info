@@ -289,4 +289,37 @@ Route::prefix('vocabulary')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\Vocabulary\VocabularyController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\Vocabulary\VocabularyController::class, 'deactivate']);
 });
+// QuizAttempt PUBLIC ROUTES
+Route::prefix('quiz-attempt')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\QuizAttempt\QuizAttemptController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\QuizAttempt\QuizAttemptController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\QuizAttempt\QuizAttemptController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\QuizAttempt\QuizAttemptController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\QuizAttempt\QuizAttemptController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\QuizAttempt\QuizAttemptController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\QuizAttempt\QuizAttemptController::class, 'deactivate']);
+});
+
+// QuizAttemptAnswer PUBLIC ROUTES
+Route::prefix('quiz-attempt-answer')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\QuizAttemptAnswer\QuizAttemptAnswerController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\QuizAttemptAnswer\QuizAttemptAnswerController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\QuizAttemptAnswer\QuizAttemptAnswerController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\QuizAttemptAnswer\QuizAttemptAnswerController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\QuizAttemptAnswer\QuizAttemptAnswerController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\QuizAttemptAnswer\QuizAttemptAnswerController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\QuizAttemptAnswer\QuizAttemptAnswerController::class, 'deactivate']);
+});
+
+// LessonComment PUBLIC ROUTES
+Route::prefix('lesson-comment')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'deactivate']);
+});
+
 */

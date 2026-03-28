@@ -23,5 +23,15 @@ class Quiz extends BaseModel
         return $this->hasMany(Question::class);
     }
 
+    public function lessonQuizzes()
+    {
+        return $this->hasMany(LessonQuiz::class);
+    }
+
+    public function attempts()
+    {
+        return $this->hasManyThrough(QuizAttempt::class, LessonQuiz::class, 'quiz_id', 'lesson_quiz_id');
+    }
+
     //
 }

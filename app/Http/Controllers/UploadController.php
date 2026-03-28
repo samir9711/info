@@ -81,6 +81,8 @@ class UploadController extends Controller
                         $allowed = [
                             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
                             'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm',
+                            'application/pdf'
+
                         ];
 
 

@@ -17,6 +17,7 @@ class LessonResource extends BasicResource
                 Lesson::class
             )
         );
+        unset($data['video_url']);
         $data['course'] = $this->whenLoaded('course', function () {
             return $this->course ? $this->course->toArray() : null;
         });
@@ -30,7 +31,7 @@ class LessonResource extends BasicResource
         $allowed = ['store', 'update', 'show'];
         if (in_array($action, $allowed, true)) {
             $data['quizzes'] = $this->whenLoaded('quizzes', function () {
-             
+
                 return $this->quizzes->map(function ($quiz) {
                     return [
                         'id' => $quiz->id,

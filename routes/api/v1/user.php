@@ -12,11 +12,14 @@ use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Favorite\FavoriteController;
 use App\Http\Controllers\Lesson\LessonController;
+use App\Http\Controllers\LessonComment\LessonCommentController;
+use App\Http\Controllers\LessonQuiz\LessonQuizController;
 use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\LessonView\LessonViewController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
+use App\Http\Controllers\QuizAttempt\QuizAttemptController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
@@ -170,6 +173,22 @@ Route::prefix('user')->name('user.')->group(function () {
 
     });
 
+    Route::prefix('quiz-attempt')->middleware('auth:user')->group(function () {
+        Route::post('/submit',       [QuizAttemptController::class, 'submit']);
+
+
+    });
+
+    Route::post('/lesson/quizzes/preview', [LessonQuizController::class, 'preview'])->middleware('auth:user');
+
+    Route::prefix('lesson-comment')->middleware('auth:user')->group(function () {
+
+        Route::get('/all',           [LessonCommentController::class, 'all']);
+
+        Route::post('/create',       [LessonCommentController::class, 'store']);
+        Route::post('/update',       [LessonCommentController::class, 'update']);
+
+    });
 
 });
 

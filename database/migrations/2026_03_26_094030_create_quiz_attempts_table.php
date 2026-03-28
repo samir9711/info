@@ -14,11 +14,16 @@ return new class extends Migration
         Schema::create('quiz_attempts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('lesson_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('quiz_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('lesson_quiz_id')->constrained('lesson_quizzes')->cascadeOnDelete();
 
 
-            $table->unsignedDecimal('score', 8, 2)->default(0);
+
+            $table->decimal('score', 8, 2)->default(0);
+            $table->unsignedInteger('correct_count')->default(0);
+            $table->unsignedInteger('wrong_count')->default(0);
+
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('submitted_at')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

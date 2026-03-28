@@ -20,5 +20,22 @@ class LessonQuiz extends BaseModel
         'required' => 'boolean',
     ];
 
+
+    public function lesson()
+    {
+        return $this->belongsTo(Lesson::class);
+    }
+
+    public function quiz()
+    {
+        return $this->belongsTo(Quiz::class);
+    }
+
+    public function attempts()
+    {
+        return $this->hasMany(QuizAttempt::class);
+    }
+
+
     //
 }

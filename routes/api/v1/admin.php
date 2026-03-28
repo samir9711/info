@@ -9,6 +9,7 @@ use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Lesson\LessonController;
+use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
@@ -123,6 +124,8 @@ Route::prefix('admin')->group(function () {
         Route::post('/create',       [LessonController::class, 'store']);
         Route::post('/update',       [LessonController::class, 'update']);
         Route::delete('/destroy',    [LessonController::class, 'destroy']);
+        Route::get('/{lesson}/video', [LessonVideoController::class, 'show'])->name('admin.lessons.video');
+
     });
 
 
