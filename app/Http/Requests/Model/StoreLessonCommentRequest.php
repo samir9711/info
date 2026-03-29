@@ -9,7 +9,7 @@ class StoreLessonCommentRequest extends BasicRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    
+
 
     /**
      * Get the validation rules that apply to the request.
@@ -20,7 +20,6 @@ class StoreLessonCommentRequest extends BasicRequest
     {
         return [
             'lesson_id' => 'required|integer|exists:lessons,id',
-            'user_id' => 'required|integer|exists:users,id',
             'parent_id' => 'nullable|integer|exists:lesson_comments,id',
             'comment' => 'required|string',
         ];

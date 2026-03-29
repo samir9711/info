@@ -18,6 +18,7 @@ class Lesson extends BaseModel
         'free_preview' => 'free_preview',
         'sources' => 'sources',
         'image' => 'image',
+        'what_will_learn' => 'what_will_learn',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class Lesson extends BaseModel
         'is_published' => 'boolean',
         'free_preview' => 'boolean',
         'sources' => 'array',
+        'what_will_learn' => 'array',
     ];
 
 

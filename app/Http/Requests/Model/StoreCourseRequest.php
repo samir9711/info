@@ -31,12 +31,14 @@ class StoreCourseRequest extends BasicRequest
             'publish' => 'nullable|in:draft,published,archived',
             'published_at' => 'nullable|date_format:Y-m-d H:i:s',
             'is_featured' => 'nullable|boolean',
+            'level'=>'nullable|in:beginner,intermediate,advanced',
+            'expected_hours'=>'nullable|integer',
 
 
             'tags' => 'nullable|array',
             'tags.*' => 'nullable',
             'tags.*.id' => 'nullable|integer|exists:tags,id',
-            'tags.*.name' => 'nullable', 
+            'tags.*.name' => 'nullable',
         ];
     }
 

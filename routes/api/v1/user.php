@@ -182,9 +182,7 @@ Route::prefix('user')->name('user.')->group(function () {
     Route::post('/lesson/quizzes/preview', [LessonQuizController::class, 'preview'])->middleware('auth:user');
 
     Route::prefix('lesson-comment')->middleware('auth:user')->group(function () {
-
         Route::get('/all',           [LessonCommentController::class, 'all']);
-
         Route::post('/create',       [LessonCommentController::class, 'store']);
         Route::post('/update',       [LessonCommentController::class, 'update']);
 

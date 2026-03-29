@@ -23,6 +23,8 @@ class Course extends BaseModel
         'publish' => 'publish',
         'published_at' => 'published_at',
         'is_featured' => 'is_featured',
+        'level' => 'level',
+        'expected_hours' => 'expected_hours',
     ];
 
     protected $casts = [
@@ -36,6 +38,8 @@ class Course extends BaseModel
         'currency_id' => 'integer',
         'published_at' => 'datetime',
         'is_featured' => 'boolean',
+        'level' => 'string',
+        'expected_hours' => 'integer',
     ];
 
 

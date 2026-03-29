@@ -31,6 +31,22 @@ class StoreLessonRequest extends BasicRequest
             'sources'      => ['nullable', 'array'],
             'sources.*'    => ['string', 'max:255'],
 
+            'what_will_learn' => ['nullable', 'array'],
+
+            'what_will_learn.ar' => ['nullable', 'array'],
+            'what_will_learn.ar.sections' => ['nullable', 'array'],
+            'what_will_learn.ar.sections.*.title' => ['nullable', 'string', 'max:255'],
+            'what_will_learn.ar.sections.*.svg' => ['nullable', 'string', 'max:255'],
+            'what_will_learn.ar.sections.*.points' => ['nullable', 'array'],
+            'what_will_learn.ar.sections.*.points.*' => ['nullable', 'string', 'max:255'],
+
+            'what_will_learn.en' => ['nullable', 'array'],
+            'what_will_learn.en.sections' => ['nullable', 'array'],
+            'what_will_learn.en.sections.*.title' => ['nullable', 'string', 'max:255'],
+            'what_will_learn.en.sections.*.svg' => ['nullable', 'string', 'max:255'],
+            'what_will_learn.en.sections.*.points' => ['nullable', 'array'],
+            'what_will_learn.en.sections.*.points.*' => ['nullable', 'string', 'max:255'],
+
 
             'quizzes' => ['nullable','array'],
             'quizzes.*.id' => ['nullable','integer','exists:quizzes,id'],

@@ -11,6 +11,7 @@ class LessonComment extends BaseModel
     protected $fillable = [
         'lesson_id' => 'lesson_id',
         'user_id' => 'user_id',
+        'admin_id' => 'admin_id',
         'parent_id' => 'parent_id',
         'comment' => 'comment',
     ];
@@ -19,11 +20,17 @@ class LessonComment extends BaseModel
         'lesson_id' => 'integer',
         'user_id' => 'integer',
         'parent_id' => 'integer',
+        'admin_id' => 'integer',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class);
     }
 
     public function lesson()
@@ -35,6 +42,22 @@ class LessonComment extends BaseModel
     {
         return $this->belongsTo(LessonComment::class, 'parent_id');
     }
+
+    public function replies()
+    {
+        return $this->hasMany(LessonComment::class, 'parent_id');
+    }
+    protected array $filterable = [
+        'parent_id'=>'int',
+        'comment'=>'like',
+        'lesson_id'=>'int'
+    ];
+
+    protected array $dynamicFilterColumns = [
+        'parent_id' ,
+        'lesson_id'
+
+    ];
 
     //
 }
