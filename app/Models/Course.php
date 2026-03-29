@@ -25,6 +25,7 @@ class Course extends BaseModel
         'is_featured' => 'is_featured',
         'level' => 'level',
         'expected_hours' => 'expected_hours',
+        'what_will_learn' => 'what_will_learn',
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class Course extends BaseModel
         'is_featured' => 'boolean',
         'level' => 'string',
         'expected_hours' => 'integer',
+        'what_will_learn' => 'array',
     ];
 
 
@@ -55,6 +57,7 @@ class Course extends BaseModel
         ],
         'is_free' => 'bool',
         'is_featured' => 'bool',
+
     ];
 
     protected array $treeFilterModels = [

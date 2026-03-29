@@ -40,7 +40,7 @@ class User extends BaseAuthModel
         'remember_token' => 'remember_token',
     ];
 
-protected $casts = [
+    protected $casts = [
         'birth_date' => 'datetime',
         'email_verified_at' => 'datetime',
         'email_status' => 'boolean',
