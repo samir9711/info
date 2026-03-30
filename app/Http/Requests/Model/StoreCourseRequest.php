@@ -50,6 +50,9 @@ class StoreCourseRequest extends BasicRequest
             'what_will_learn.en.sections.*.points' => ['nullable', 'array'],
             'what_will_learn.en.sections.*.points.*' => ['nullable', 'string', 'max:255'],
 
+            'instructor_ids' => ['nullable', 'array'],
+            'instructor_ids.*' => ['integer', 'exists:instructors,id'],
+
 
             'tags' => 'nullable|array',
             'tags.*' => 'nullable',

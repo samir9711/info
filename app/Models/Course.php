@@ -85,5 +85,11 @@ class Course extends BaseModel
         return $this->hasMany(Lesson::class);
     }
 
+    public function instructors()
+    {
+        return $this->belongsToMany(Instructor::class,'course_instructors','course_id','instructor_id')
+        ->withTimestamps();
+    }
+
     //
 }

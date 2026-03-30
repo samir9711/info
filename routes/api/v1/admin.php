@@ -7,7 +7,9 @@ use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
+use App\Http\Controllers\CourseInstructor\CourseInstructorController;
 use App\Http\Controllers\Faq\FaqController;
+use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Lesson\LessonController;
 use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
@@ -136,6 +138,28 @@ Route::prefix('admin')->group(function () {
         Route::post('/create',       [CourseApplicationController::class, 'store']);
         Route::post('/update',       [CourseApplicationController::class, 'update']);
         Route::delete('/destroy',    [CourseApplicationController::class, 'destroy']);
+    });
+
+
+
+    Route::prefix('instructor')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [InstructorController::class, 'allPaginated']);
+        Route::get('/all',           [InstructorController::class, 'all']);
+        Route::post('/show',         [InstructorController::class, 'show']);
+        Route::post('/create',       [InstructorController::class, 'store']);
+        Route::post('/update',       [InstructorController::class, 'update']);
+        Route::delete('/destroy',    [InstructorController::class, 'destroy']);
+    });
+
+
+    Route::prefix('course-instructor')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [CourseInstructorController::class, 'allPaginated']);
+        Route::get('/all',           [CourseInstructorController::class, 'all']);
+        Route::post('/show',         [CourseInstructorController::class, 'show']);
+        Route::post('/create',       [CourseInstructorController::class, 'store']);
+        Route::post('/update',       [CourseInstructorController::class, 'update']);
+        Route::post('/activate',     [CourseInstructorController::class, 'activate']);
+        Route::post('/deactivate',   [CourseInstructorController::class, 'deactivate']);
     });
 
 

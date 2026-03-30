@@ -11,6 +11,7 @@ use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Favorite\FavoriteController;
+use App\Http\Controllers\InstructorRating\InstructorRatingController;
 use App\Http\Controllers\Lesson\LessonController;
 use App\Http\Controllers\LessonComment\LessonCommentController;
 use App\Http\Controllers\LessonQuiz\LessonQuizController;
@@ -181,10 +182,20 @@ Route::prefix('user')->name('user.')->group(function () {
 
     Route::post('/lesson/quizzes/preview', [LessonQuizController::class, 'preview'])->middleware('auth:user');
 
-    Route::prefix('lesson-comment')->middleware('auth:user')->group(function () {
+    Route::prefix('lesson-comment')->group(function () {
         Route::get('/all',           [LessonCommentController::class, 'all']);
-        Route::post('/create',       [LessonCommentController::class, 'store']);
-        Route::post('/update',       [LessonCommentController::class, 'update']);
+        Route::post('/create',       [LessonCommentController::class, 'store'])->middleware('auth:user');
+        Route::post('/update',       [LessonCommentController::class, 'update'])->middleware('auth:user');
+
+    });
+
+
+    Route::prefix('instructor-rating')->group(function () {
+        Route::post('/ratings', [InstructorRatingController::class, 'byInstructor']);
+        Route::post('/summary', [InstructorRatingController::class, 'summary']);
+
+        Route::post('/create',       [InstructorRatingController::class, 'store'])->middleware('auth:user');
+        Route::delete('/destroy',    [InstructorRatingController::class, 'destroy'])->middleware('auth:user');
 
     });
 

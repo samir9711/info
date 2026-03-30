@@ -322,4 +322,39 @@ Route::prefix('lesson-comment')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\LessonComment\LessonCommentController::class, 'deactivate']);
 });
 
+
+
+// Instructor PUBLIC ROUTES
+Route::prefix('instructor')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\Instructor\InstructorController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\Instructor\InstructorController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\Instructor\InstructorController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\Instructor\InstructorController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\Instructor\InstructorController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\Instructor\InstructorController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\Instructor\InstructorController::class, 'deactivate']);
+});
+
+// CourseInstructor PUBLIC ROUTES
+Route::prefix('course-instructor')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CourseInstructor\CourseInstructorController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CourseInstructor\CourseInstructorController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CourseInstructor\CourseInstructorController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CourseInstructor\CourseInstructorController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CourseInstructor\CourseInstructorController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CourseInstructor\CourseInstructorController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CourseInstructor\CourseInstructorController::class, 'deactivate']);
+});
+
+
+// InstructorRating PUBLIC ROUTES
+Route::prefix('instructor-rating')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'deactivate']);
+});
 */

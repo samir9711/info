@@ -72,4 +72,9 @@ class User extends BaseAuthModel
             'password' => 'hashed',
         ];
     }
+
+    public function instructorRatings()
+    {
+        return $this->hasMany(InstructorRating::class);
+    }
 }

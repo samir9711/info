@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Http\Resources\Model\CourseResource;
 use Illuminate\Http\Request;
 use App\Http\Requests\Basic\BasicRequest;
+use Illuminate\Support\Facades\DB;
 
 class CourseService extends BasicCrudService
 {
@@ -21,7 +22,7 @@ class CourseService extends BasicCrudService
         );
 
         $this->resource = CourseResource::class;
-        $this->relations = ['category','category.parent','currency','tags','lessons'];
+        $this->relations = ['category','category.parent','currency','tags','lessons' ,'instructors'];
     }
 
     protected function allQuery(): object
@@ -37,29 +38,39 @@ class CourseService extends BasicCrudService
     {
         $data = $request->validated();
 
-        $course = $this->model::create($data);
+        return DB::transaction(function () use ($data) {
+            $course = $this->model::create($data);
 
-        // sync tags if provided
-        if (array_key_exists('tags', $data)) {
-            $course->syncTags((array) $data['tags']);
-        }
+            if (array_key_exists('tags', $data)) {
+                $course->syncTags((array) $data['tags']);
+            }
 
-        return $this->resource::make($course->load($this->relations));
+            if (array_key_exists('instructor_ids', $data)) {
+                $course->instructors()->sync($data['instructor_ids'] ?? []);
+            }
+            return $this->resource::make($course->fresh()->load($this->relations));
+        });
     }
 
     public function update(BasicRequest $request): mixed
     {
         $data = $request->validated();
 
-        $course = $this->model::with($this->relations)->findOrFail($request->id);
+        return DB::transaction(function () use ($request, $data) {
+            $course = $this->model::with($this->relations)->findOrFail($request->id);
 
-        $course->update($data);
+            $course->update($data);
 
-        if (array_key_exists('tags', $data)) {
-            $course->syncTags((array) $data['tags']);
-        }
+            if (array_key_exists('tags', $data)) {
+                $course->syncTags((array) $data['tags']);
+            }
 
-        return $this->resource::make($course->fresh()->load($this->relations));
+            if (array_key_exists('instructor_ids', $data)) {
+                $course->instructors()->sync($data['instructor_ids'] ?? []);
+            }
+
+            return $this->resource::make($course->fresh()->load($this->relations));
+        });
     }
 
 
