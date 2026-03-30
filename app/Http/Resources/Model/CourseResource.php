@@ -30,6 +30,9 @@ class CourseResource extends BasicResource
         $data['lessons_count'] = $this->lessons_count ?? 0;
 
         $data['accepted_students_count'] = $this->accepted_students_count ?? 0;
+        $data['instructors'] = InstructorResource::collection(
+            $this->whenLoaded('instructors')
+        );
         return $data;
     }
 
