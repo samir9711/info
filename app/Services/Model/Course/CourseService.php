@@ -74,4 +74,21 @@ class CourseService extends BasicCrudService
     }
 
 
+    public function myCourses(Request $request): mixed
+    {
+        $userId = $request->user()->id;
+
+        $courses = Course::query()
+            ->with($this->relations)
+            ->withCount('lessons')
+            ->whereHas('applications', function ($q) use ($userId) {
+                $q->where('applicant_id', $userId)
+                ->where('status', 1);
+            })
+            ->get();
+
+        return $this->resource::collection($courses);
+    }
+
+
 }

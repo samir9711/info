@@ -117,6 +117,7 @@ Route::prefix('user')->name('user.')->group(function () {
         Route::get('/all/paginated', [CourseController::class, 'allPaginated']);
         Route::get('/all',           [CourseController::class, 'all']);
         Route::post('/show',         [CourseController::class, 'show']);
+        Route::middleware(['auth:user'])->get('/my', [CourseController::class, 'myCourses']);
 
     });
 
@@ -198,6 +199,8 @@ Route::prefix('user')->name('user.')->group(function () {
         Route::delete('/destroy',    [InstructorRatingController::class, 'destroy'])->middleware('auth:user');
 
     });
+
+
 
 });
 

@@ -91,5 +91,15 @@ class Course extends BaseModel
         ->withTimestamps();
     }
 
+    public function applications()
+    {
+        return $this->hasMany(CourseApplication::class);
+    }
+
+    public function approvedApplications()
+    {
+        return $this->hasMany(CourseApplication::class)->where('status', 1);
+    }
+
     //
 }

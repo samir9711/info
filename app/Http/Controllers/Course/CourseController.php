@@ -16,4 +16,15 @@ class CourseController extends FatherCrudController
         $this->createRequest = StoreCourseRequest::class;
         $this->updateRequest = StoreCourseRequest::class;
     }
+
+
+    public function myCourses(Request $request)
+    {
+        try {
+            $data = $this->service::myCourses($request);
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
 }
