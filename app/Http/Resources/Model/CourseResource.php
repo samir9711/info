@@ -28,6 +28,8 @@ class CourseResource extends BasicResource
             return $this->tags ? $this->tags->toArray() : null;
         });
         $data['lessons_count'] = $this->lessons_count ?? 0;
+
+        $data['accepted_students_count'] = $this->accepted_students_count ?? 0;
         return $data;
     }
 

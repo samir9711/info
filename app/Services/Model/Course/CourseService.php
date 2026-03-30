@@ -29,7 +29,12 @@ class CourseService extends BasicCrudService
     {
         return $this->model::withFilters()
             ->with($this->relations)
-            ->withCount('lessons')
+            ->withCount([
+                'lessons',
+                'applications as accepted_students_count' => function ($q) {
+                    $q->where('status', 1);
+                },
+            ])
             ->orderByDesc('created_at');
     }
 
