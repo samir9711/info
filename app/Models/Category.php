@@ -13,13 +13,16 @@ class Category extends BaseModel
         'name' => 'name',
         'description' => 'description',
         'image' => 'image',
+        'points' => 'points',
+        'title' => 'title',
     ];
 
     protected $casts = [
         'parent_id' => 'integer',
         'name' => 'array',
         'description' => 'array',
-        'points' => 'array'
+        'points' => 'array',
+        'title' => 'array',
     ];
 
 

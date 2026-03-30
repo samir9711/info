@@ -24,6 +24,7 @@ class StoreCategoryRequest extends BasicRequest
             'description' => 'nullable|array',
             'image' => 'nullable|string|max:255',
             'points' => 'nullable|array',
+            'title' => 'nullable|array',
         ];
     }
 
