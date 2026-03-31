@@ -20,6 +20,10 @@ class Instructor extends BaseModel
     ];
 
     protected $casts = [
+        'name' => 'array',
+        'profession' => 'array',
+        'bio' => 'array',
+        'headline' => 'array',
     ];
 
 
