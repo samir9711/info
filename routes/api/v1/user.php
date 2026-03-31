@@ -121,7 +121,7 @@ Route::prefix('user')->name('user.')->group(function () {
 
     });
 
-    Route::prefix('lesson')->middleware('auth:admin')->group(function () {
+    Route::prefix('lesson')->middleware('auth:user')->group(function () {
         Route::get('/all/paginated', [LessonController::class, 'allPaginated']);
         Route::get('/all',           [LessonController::class, 'all']);
         Route::post('/show',         [LessonController::class, 'show']);
