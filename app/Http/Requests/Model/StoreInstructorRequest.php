@@ -9,7 +9,7 @@ class StoreInstructorRequest extends BasicRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    
+
 
     /**
      * Get the validation rules that apply to the request.
@@ -19,11 +19,11 @@ class StoreInstructorRequest extends BasicRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|array',
             'image' => 'nullable|string|max:255',
-            'profession' => 'nullable|string',
-            'bio' => 'nullable|string',
-            'headline' => 'nullable|string|max:255',
+            'profession' => 'nullable|array',
+            'bio' => 'nullable|array',
+            'headline' => 'nullable|array',
             'email' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:255',
             'experience' => 'nullable|string|max:255',
