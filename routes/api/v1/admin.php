@@ -7,6 +7,7 @@ use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
+use App\Http\Controllers\CourseCondition\CourseConditionController;
 use App\Http\Controllers\CourseInstructor\CourseInstructorController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Instructor\InstructorController;
@@ -171,6 +172,13 @@ Route::prefix('admin')->group(function () {
         Route::delete('/destroy',    [LessonCommentController::class, 'destroy']);
 
     });
+
+
+    Route::prefix('course-condition')->middleware('auth:admin')->group(function () {
+        Route::post('/show',         [CourseConditionController::class, 'show']);
+        Route::post('/create',       [CourseConditionController::class, 'store']);
+    });
+
 
 
 

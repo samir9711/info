@@ -357,4 +357,16 @@ Route::prefix('instructor-rating')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\InstructorRating\InstructorRatingController::class, 'deactivate']);
 });
+
+
+// CourseCondition PUBLIC ROUTES
+Route::prefix('course-condition')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'deactivate']);
+});
 */
