@@ -40,6 +40,16 @@ class CourseApplication extends BaseModel
     {
         return $this->belongsTo(User::class);
     }
+    protected array $filterable = [
+        'course_id'=>'int',
+
+    ];
+
+    protected array $dynamicFilterColumns = [
+        'course_id' ,
+
+    ];
+
 
     //
 }
