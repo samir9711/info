@@ -12,22 +12,22 @@ class LessonResource extends BasicResource
 {
     public function toArray(Request $request): array
     {
-        $data= $this->initResource(
-            ModelColumnsService::getServiceFor(
-                Lesson::class
-            )
-        );
+        $data = $this->initResource(ModelColumnsService::getServiceFor(Lesson::class));
+
         unset($data['video_url']);
+
         $data['course'] = $this->whenLoaded('course', function () {
             return $this->course ? $this->course->toArray() : null;
         });
+
+        $data['can_watch_video'] = $this->canWatchVideo($request);
+
         $action = null;
         if ($route = $request->route()) {
 
             $action = $route->getActionMethod() ?? null;
         }
 
-        // عرض quizzes فقط عند create (store), update, show
         $allowed = ['store', 'update', 'show'];
         if (in_array($action, $allowed, true)) {
             $data['quizzes'] = $this->whenLoaded('quizzes', function () {
@@ -57,6 +57,39 @@ class LessonResource extends BasicResource
         }
 
         return $data;
+    }
+
+    protected function canWatchVideo(Request $request): bool
+    {
+        $course = $this->whenLoaded('course', fn () => $this->course) ?? $this->course;
+
+        if (!$course) {
+            return false;
+        }
+
+        if ((bool) $course->is_free) {
+            return true;
+        }
+
+        if ((bool) $this->free_preview) {
+            return true;
+        }
+
+        $user = $request->user('user') ?? $request->user();
+        $admin = $request->user('admin');
+
+        if ($admin) {
+            return true;
+        }
+
+        if (!$user) {
+            return false;
+        }
+
+        return $course->applications()
+            ->where('applicant_id', $user->id)
+            ->where('status', 1)
+            ->exists();
     }
 
     protected function initResource($modelColumnsService): array
