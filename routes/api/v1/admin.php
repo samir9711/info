@@ -11,6 +11,7 @@ use App\Http\Controllers\CourseInstructor\CourseInstructorController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Lesson\LessonController;
+use App\Http\Controllers\LessonComment\LessonCommentController;
 use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
@@ -160,6 +161,15 @@ Route::prefix('admin')->group(function () {
         Route::post('/update',       [CourseInstructorController::class, 'update']);
         Route::post('/activate',     [CourseInstructorController::class, 'activate']);
         Route::post('/deactivate',   [CourseInstructorController::class, 'deactivate']);
+    });
+
+
+    Route::prefix('lesson-comment')->middleware('auth:admin')->group(function () {
+        Route::get('/all',           [LessonCommentController::class, 'all']);
+        Route::post('/create',       [LessonCommentController::class, 'store']);
+        Route::post('/update',       [LessonCommentController::class, 'update']);
+        Route::delete('/destroy',    [LessonCommentController::class, 'destroy']);
+
     });
 
 

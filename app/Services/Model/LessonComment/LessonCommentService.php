@@ -9,6 +9,7 @@ use App\Http\Resources\Model\LessonCommentResource;
 use App\Http\Requests\Basic\BasicRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Http\Request;
 
 class LessonCommentService extends BasicCrudService
 {
@@ -59,4 +60,56 @@ class LessonCommentService extends BasicCrudService
             return $this->resource::make($comment);
         });
     }
+
+
+    public function update(BasicRequest $request): mixed
+    {
+        $data = $request->validated();
+
+        $user = $request->user();
+        $admin = $request->user('admin');
+
+        if (!$user && !$admin) {
+            abort(401);
+        }
+
+        $comment = LessonComment::findOrFail($request->id);
+
+        $isOwner = $user && (int) $comment->user_id === (int) $user->id;
+        $isAdmin = (bool) $admin;
+
+        if (!$isOwner && !$isAdmin) {
+            abort(403, 'You are not allowed to edit this comment.');
+        }
+
+        $comment->update([
+            'comment' => $data['comment'] ?? $comment->comment,
+        ]);
+
+        $comment->load(['user', 'admin', 'lesson', 'parent']);
+
+        return $this->resource::make($comment);
+    }
+
+    public function delete(Request $request): bool
+    {
+        $user = $request->user();
+        $admin = $request->user('admin');
+
+        if (!$user && !$admin) {
+            abort(401);
+        }
+
+        $comment = LessonComment::findOrFail($request->id);
+
+        $isOwner = $user && (int) $comment->user_id === (int) $user->id;
+        $isAdmin = (bool) $admin;
+
+        if (!$isOwner && !$isAdmin) {
+            abort(403, 'You are not allowed to delete this comment.');
+        }
+
+        return (bool) $comment->delete();
+    }
+
 }

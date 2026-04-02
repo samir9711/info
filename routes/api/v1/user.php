@@ -187,6 +187,7 @@ Route::prefix('user')->name('user.')->group(function () {
         Route::get('/all',           [LessonCommentController::class, 'all']);
         Route::post('/create',       [LessonCommentController::class, 'store'])->middleware('auth:user');
         Route::post('/update',       [LessonCommentController::class, 'update'])->middleware('auth:user');
+        Route::delete('/destroy',    [LessonCommentController::class, 'destroy'])->middleware('auth:user');
 
     });
 
