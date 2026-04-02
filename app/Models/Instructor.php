@@ -5,8 +5,9 @@ namespace App\Models;
 use App\Models\BaseModel;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
-class Instructor extends BaseModel
+class Instructor extends BaseAuthModel
 {
     protected $fillable = [
         'name' => 'name',
@@ -17,6 +18,7 @@ class Instructor extends BaseModel
         'email' => 'email',
         'phone' => 'phone',
         'experience' => 'experience',
+        'password' => 'password',
     ];
 
     protected $casts = [
@@ -24,6 +26,11 @@ class Instructor extends BaseModel
         'profession' => 'array',
         'bio' => 'array',
         'headline' => 'array',
+    ];
+
+    protected $hidden = [
+        'password',
+
     ];
 
 
@@ -42,6 +49,17 @@ class Instructor extends BaseModel
     public function averageRating()
     {
         return $this->ratings()->avg('rating');
+    }
+
+
+    public function setPasswordAttribute(?string $value): void
+    {
+        if ($value === null || $value === '') {
+            $this->attributes['password'] = $value;
+            return;
+        }
+
+        $this->attributes['password'] = Hash::needsRehash($value) ? Hash::make($value) : $value;
     }
 
     //

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AboutUs\AboutUsController;
+use App\Http\Controllers\Auth\PublicAuthController;
 use App\Http\Controllers\Auth\UnifiedAuthController;
 use App\Http\Controllers\Currency\CurrencyController;
 use App\Http\Controllers\Directorate\DirectorateController;
@@ -30,7 +31,7 @@ Route::post('upload/video/{folder}', [UploadController::class, 'singleVideo']);
 
 
 
-
+Route::post('login', [PublicAuthController::class, 'login']);
 
 
 
