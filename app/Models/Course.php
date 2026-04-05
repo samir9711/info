@@ -26,6 +26,12 @@ class Course extends BaseModel
         'level' => 'level',
         'expected_hours' => 'expected_hours',
         'what_will_learn' => 'what_will_learn',
+        'created_by' => 'created_by',
+        'approval_status' => 'approval_status',
+        'is_platform_owned' => 'is_platform_owned',
+        'rejection_reason' => 'rejection_reason',
+        'profit_percentage'=>'profit_percentage'
+
     ];
 
     protected $casts = [
@@ -42,6 +48,11 @@ class Course extends BaseModel
         'level' => 'string',
         'expected_hours' => 'integer',
         'what_will_learn' => 'array',
+        'created_by' => 'integer',
+        'approval_status' => 'integer',
+        'is_platform_owned' => 'boolean',
+        'rejection_reason' => 'string',
+        'profit_percentage'=>'float'
     ];
 
 
@@ -57,6 +68,8 @@ class Course extends BaseModel
         ],
         'is_free' => 'bool',
         'is_featured' => 'bool',
+        'approval_status' => 'int',
+        'is_platform_owned'=>'bool'
 
     ];
 
@@ -67,7 +80,9 @@ class Course extends BaseModel
     protected array $dynamicFilterColumns = [
         'category_id' ,
         'is_free',
-        'is_featured'
+        'is_featured',
+        'approval_status',
+        'is_platform_owned'
     ];
 
     public function category()

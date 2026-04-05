@@ -333,4 +333,34 @@ class LessonVideoController extends Controller
             'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
         ]);
     }
+
+    public function showForInstructor(Request $request, Lesson $lesson)
+    {
+        $instructor = $request->user('instructor');
+
+        if (!$instructor) {
+            abort(401);
+        }
+
+        $lesson->loadMissing('course');
+
+        if (
+            !$lesson->course ||
+            (int) $lesson->course->created_by !== (int) $instructor->id
+        ) {
+            abort(403, 'You are not allowed to access this lesson video.');
+        }
+
+        $path = $lesson->video_url;
+
+        if (!$path || !Storage::disk('private')->exists($path)) {
+            abort(404);
+        }
+
+        return response()->file(Storage::disk('private')->path($path), [
+            'Content-Type' => Storage::disk('private')->mimeType($path),
+            'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
+        ]);
+    }
+
 }

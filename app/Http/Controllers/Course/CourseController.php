@@ -27,4 +27,31 @@ class CourseController extends FatherCrudController
             return $this->handleException($e);
         }
     }
+    public function myInstructorCourses(Request $request)
+    {
+        try {
+            $data = $this->service::myInstructorCourses($request);
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
+    public function approve(Request $request)
+    {
+        try {
+            $data = $this->service::approve($request);
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
+    public function reject(Request $request)
+    {
+        try {
+            $data = $this->service::reject($request);
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
 }

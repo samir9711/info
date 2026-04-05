@@ -119,6 +119,9 @@ Route::prefix('admin')->group(function () {
         Route::post('/create',       [CourseController::class, 'store']);
         Route::post('/update',       [CourseController::class, 'update']);
         Route::delete('/destroy',    [CourseController::class, 'destroy']);
+        Route::post('/approve',      [CourseController::class, 'approve']);
+        Route::post('/reject',       [CourseController::class, 'reject']);
+
     });
 
     Route::prefix('lesson')->middleware('auth:admin')->group(function () {
@@ -128,7 +131,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/create',       [LessonController::class, 'store']);
         Route::post('/update',       [LessonController::class, 'update']);
         Route::delete('/destroy',    [LessonController::class, 'destroy']);
-        Route::get('/{lesson}/video', [LessonVideoController::class, 'show'])->name('admin.lessons.video');
+        Route::get('/{lesson}/video',[LessonVideoController::class, 'show'])->name('admin.lessons.video');
 
     });
 

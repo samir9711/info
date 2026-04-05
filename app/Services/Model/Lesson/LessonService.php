@@ -33,6 +33,17 @@ class LessonService extends BasicCrudService
     {
         $data = $request->validated();
 
+        $admin = $request->user('admin');
+        $instructor = $request->user('instructor');
+
+        if (!$admin && !$instructor) {
+            abort(401);
+        }
+
+        if ($instructor) {
+            $this->ensureInstructorOwnsCourse((int) $data['course_id'], (int) $instructor->id);
+        }
+
         return DB::transaction(function () use ($data) {
             // create lesson (assume $data fields match fillable)
             $lesson = $this->model::create($data);
@@ -50,10 +61,21 @@ class LessonService extends BasicCrudService
     {
         $data = $request->validated();
 
-        return DB::transaction(function () use ($data, $request) {
+        $admin = $request->user('admin');
+        $instructor = $request->user('instructor');
+
+        if (!$admin && !$instructor) {
+            abort(401);
+        }
+
+        return DB::transaction(function () use ($data, $request, $admin, $instructor) {
             $lesson = $this->model::with($this->relations)->findOrFail($request->id);
 
-            // update lesson fields (only allowed fields will be saved)
+            if ($instructor) {
+                $targetCourseId = (int) ($data['course_id'] ?? $lesson->course_id);
+                $this->ensureInstructorOwnsCourse($targetCourseId, (int) $instructor->id);
+            }
+
             $lesson->update($data);
 
             // process quizzes (sync)
@@ -65,18 +87,18 @@ class LessonService extends BasicCrudService
         });
     }
 
-    /**
-     * Process quizzes array for a given lesson.
-     * - create/update quizzes
-     * - create/update/delete questions & answers
-     * - sync lesson_quizzes pivot with 'required' attribute (sync replaces existing)
-     *
-     * Expected $quizzes: array of objects:
-     * [
-     *   { id?: int, title?:[], description?:[], required?:bool, questions?: [...] },
-     *   ...
-     * ]
-     */
+    protected function ensureInstructorOwnsCourse(int $courseId, int $instructorId): void
+    {
+        $ownsCourse = Course::query()
+            ->where('id', $courseId)
+            ->where('created_by', $instructorId)
+            ->exists();
+
+        if (!$ownsCourse) {
+            abort(403, 'You are not allowed to add or edit lessons for this course.');
+        }
+    }
+
     protected function processQuizzesForLesson(Lesson $lesson, array $quizzes): void
     {
         $syncData = []; // [ quiz_id => ['required' => bool] ]
