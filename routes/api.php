@@ -370,3 +370,14 @@ Route::prefix('course-condition')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'deactivate']);
 });
 */
+
+// CourseFinancialTransaction PUBLIC ROUTES
+Route::prefix('course-financial-transaction')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'deactivate']);
+});

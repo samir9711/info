@@ -8,6 +8,7 @@ use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\CourseCondition\CourseConditionController;
+use App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController;
 use App\Http\Controllers\CourseInstructor\CourseInstructorController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Instructor\InstructorController;
@@ -183,6 +184,23 @@ Route::prefix('admin')->group(function () {
     });
 
 
+    Route::middleware(['auth:admin'])->group(function () {
+        Route::post('/course-financial-transactions/settle', [CourseFinancialTransactionController::class, 'settle']);
+    });
+
+    Route::middleware(['auth:admin'])->group(function () {
+        Route::get('/course-financial-transactions/my-transactions', [CourseFinancialTransactionController::class, 'myTransactions']);
+    });
+
+    Route::prefix('course-financial-transaction')->middleware(['auth:admin'])->group(function () {
+        Route::get('/all/paginated', [CourseFinancialTransactionController::class, 'allPaginated']);
+        Route::get('/all',           [CourseFinancialTransactionController::class, 'all']);
+        Route::post('/show',         [CourseFinancialTransactionController::class, 'show']);
+        Route::post('/create',       [CourseFinancialTransactionController::class, 'store']);
+        Route::post('/update',       [CourseFinancialTransactionController::class, 'update']);
+        Route::delete('/destroy',    [CourseFinancialTransactionController::class, 'destroy']);
+
+    });
 
 
 

@@ -11,12 +11,14 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Basic\BasicRequest;
+use App\Services\Model\CourseFinancialTransaction\CourseFinancialTransactionService;
 
 class CourseApplicationService extends BasicCrudService
 {
     /**
      * Override to set up modelColumnsService and resource.
      */
+    protected CourseFinancialTransactionService $financialService;
     protected function setVariables(): void
     {
         $this->modelColumnsService = ModelColumnsService::getServiceFor(
@@ -25,6 +27,7 @@ class CourseApplicationService extends BasicCrudService
 
         $this->resource = CourseApplicationResource::class;
         $this->relations = ['course','course.category','course.category.parent','applicant'];
+        $this->financialService = app(CourseFinancialTransactionService::class);
     }
 
     protected function allQuery(): object
@@ -129,18 +132,18 @@ class CourseApplicationService extends BasicCrudService
         return DB::transaction(function () use ($data, $request) {
             $object = $this->model::with($this->relations)->findOrFail($request->id);
 
-            
-            if (array_key_exists('status', $data)) {
-                $newStatus = (int) $data['status'];
-                $oldStatus = (int) ($object->status ?? 0);
+            $oldStatus = (int) ($object->status ?? 0);
+            $newStatus = array_key_exists('status', $data) ? (int) $data['status'] : $oldStatus;
 
-                if ($newStatus !== $oldStatus) {
-
-                    $data['reviewed_at'] = $newStatus === 0 ? null : now();
-                }
+            if ($newStatus !== $oldStatus) {
+                $data['reviewed_at'] = $newStatus === 0 ? null : now();
             }
 
             $object->update($data);
+
+            if ($oldStatus !== 1 && $newStatus === 1) {
+                $this->financialService->createForApplication($object->fresh(['course']));
+            }
 
             return $this->resource::make($object->fresh()->load($this->relations));
         });

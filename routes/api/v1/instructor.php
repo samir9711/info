@@ -8,6 +8,7 @@ use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\CourseCondition\CourseConditionController;
+use App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController;
 use App\Http\Controllers\CourseInstructor\CourseInstructorController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Instructor\InstructorController;
@@ -43,6 +44,10 @@ Route::prefix('instructor')->group(function () {
         Route::delete('/destroy',    [LessonController::class, 'destroy']);
         Route::get('/{lesson}/video',[LessonVideoController::class, 'showForInstructor']);
 
+    });
+
+    Route::middleware(['auth:instructor'])->group(function () {
+        Route::get('/course-financial-transactions/my-transactions', [CourseFinancialTransactionController::class, 'myTransactions']);
     });
 
 
