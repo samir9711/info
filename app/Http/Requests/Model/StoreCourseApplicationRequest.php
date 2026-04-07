@@ -25,7 +25,7 @@ class StoreCourseApplicationRequest extends BasicRequest
             'status' => 'nullable|integer',
             'reviewed_by' => 'nullable|integer|exists:users,id',
             'reviewed_at' => 'nullable|date_format:Y-m-d H:i:s',
-            'image' => 'required|string|max:255',
+            'image' => 'nullable|string|max:255',
         ];
     }
 

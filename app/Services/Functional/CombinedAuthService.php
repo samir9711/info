@@ -19,14 +19,14 @@ class CombinedAuthService
         $email = $request->input('email');
         $password = $request->input('password');
 
-        
+        /*
         $admin = Admin::where('email', $email)->first();
         if ($admin && $admin->password && Hash::check($password, $admin->password)) {
             $token = $admin->createToken('access-token')->plainTextToken;
             $admin->loadMissing(['roles','permissions']);
             return ['token' => $token, 'admin' => AdminResource::make($admin)];
         }
-
+        */
 
         $instructor = Instructor::where('email', $email)->first();
         if ($instructor && $instructor->password && Hash::check($password, $instructor->password)) {
