@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('contactus', function (Blueprint $table) {
+        Schema::table('contact_us', function (Blueprint $table) {
             $table->json('description')->nullable()->change();
         });
     }
