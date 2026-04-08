@@ -7,7 +7,8 @@ use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 
 class ContactUs extends BaseModel
-{protected $fillable = [
+{
+    protected $fillable = [
         'phone' => 'phone',
         'facebook' => 'facebook',
         'instagram' => 'instagram',
@@ -16,7 +17,8 @@ class ContactUs extends BaseModel
         'description' => 'description',
     ];
 
-protected $casts = [
+    protected $casts = [
+    'description' => 'array',
     ];
 
     //

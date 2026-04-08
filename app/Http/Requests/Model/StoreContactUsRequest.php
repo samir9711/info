@@ -9,7 +9,7 @@ class StoreContactUsRequest extends BasicRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    
+
 
     /**
      * Get the validation rules that apply to the request.
@@ -24,7 +24,7 @@ class StoreContactUsRequest extends BasicRequest
             'instagram' => 'nullable|string|max:255',
             'twitter' => 'nullable|string|max:255',
             'logo' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|array',
         ];
     }
 
