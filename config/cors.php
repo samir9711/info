@@ -29,8 +29,9 @@ return [
         'http://72.61.94.127:3300',
         'http://72.61.94.127:3301',
         'http://72.61.94.127:3302',
-        'https://quraniccontests.com',
-        'https://tamayouz.quraniccontests.com'
+        'https://tipacademy.online',
+        'http://tipacademy.online:3000',
+
     ],
 
     'allowed_origins_patterns' => [],
