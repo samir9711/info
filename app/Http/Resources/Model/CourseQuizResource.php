@@ -12,17 +12,47 @@ class CourseQuizResource extends BasicResource
 {
     public function toArray(Request $request): array
     {
-        return $this->initResource(
-            ModelColumnsService::getServiceFor(
-                CourseQuiz::class
-            )
+        $courseQuiz = $this->resource;
+
+
+        $courseQuiz->loadMissing([
+            'course',
+            'quiz.questions.answers',
+        ]);
+
+        $data = $this->initResource(
+            ModelColumnsService::getServiceFor(CourseQuiz::class)
         );
+
+        $data['course'] = $courseQuiz->relationLoaded('course')
+            ? new CourseResource($courseQuiz->course)
+            : null;
+
+        $data['quiz'] = $courseQuiz->relationLoaded('quiz') ? [
+            'id' => $courseQuiz->quiz->id,
+            'title' => $courseQuiz->quiz->title,
+            'description' => $courseQuiz->quiz->description,
+            'questions' => $courseQuiz->quiz->questions->map(function ($question) use ($request) {
+                return [
+                    'id' => $question->id,
+                    'question' => $question->question,
+                    'image' => $question->image,
+                    'answers' => $question->answers->map(function ($answer) use ($request) {
+                        $item = [
+                            'id' => $answer->id,
+                            'answer' => $answer->answer,
+                            'is_correct' => $answer->is_correct,
+                        ];
+
+
+
+                        return $item;
+                    })->values(),
+                ];
+            })->values(),
+        ] : null;
+
+        return $data;
     }
 
-    protected function initResource($modelColumnsService): array
-    {
-        $this->result = parent::initResource($modelColumnsService);
-
-        return array_merge($this->result, []);
-    }
 }

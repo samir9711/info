@@ -123,5 +123,17 @@ class Course extends BaseModel
         return $this->hasMany(CourseApplication::class)->where('status', 1);
     }
 
+    public function courseQuizzes()
+    {
+        return $this->hasMany(CourseQuiz::class);
+    }
+
+    public function quizzes()
+    {
+        return $this->belongsToMany(Quiz::class, 'course_quizzes', 'course_id', 'quiz_id')
+            ->withPivot('is_final')
+            ->withTimestamps();
+    }
+
     //
 }

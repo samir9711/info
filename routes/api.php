@@ -369,7 +369,7 @@ Route::prefix('course-condition')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\CourseCondition\CourseConditionController::class, 'deactivate']);
 });
-*/
+
 
 // CourseFinancialTransaction PUBLIC ROUTES
 Route::prefix('course-financial-transaction')->group(function () {
@@ -381,3 +381,4 @@ Route::prefix('course-financial-transaction')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'deactivate']);
 });
+*/

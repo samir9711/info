@@ -20,5 +20,26 @@ class CourseQuiz extends BaseModel
         'is_final' => 'boolean',
     ];
 
+    protected array $filterable = [
+        'quiz_id'=>'int',
+        'course_id'=>'int',
+    ];
+
+    protected array $dynamicFilterColumns = [
+        'quiz_id',
+        'course_id',
+    ];
+
+
+    public function quiz()
+    {
+        return $this->belongsTo(Quiz::class);
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
+
     //
 }

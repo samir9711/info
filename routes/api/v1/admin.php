@@ -10,6 +10,7 @@ use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\CourseCondition\CourseConditionController;
 use App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController;
 use App\Http\Controllers\CourseInstructor\CourseInstructorController;
+use App\Http\Controllers\CourseQuiz\CourseQuizController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Lesson\LessonController;
@@ -199,6 +200,17 @@ Route::prefix('admin')->group(function () {
         Route::post('/create',       [CourseFinancialTransactionController::class, 'store']);
         Route::post('/update',       [CourseFinancialTransactionController::class, 'update']);
         Route::delete('/destroy',    [CourseFinancialTransactionController::class, 'destroy']);
+
+    });
+
+
+    Route::prefix('course-quiz')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [CourseQuizController::class, 'allPaginated']);
+        Route::get('/all',           [CourseQuizController::class, 'all']);
+        Route::post('/show',         [CourseQuizController::class, 'show']);
+        Route::post('/create',       [CourseQuizController::class, 'store']);
+        Route::post('/update',       [CourseQuizController::class, 'update']);
+        Route::delete('/destroy',    [CourseQuizController::class, 'destroy']);
 
     });
 
