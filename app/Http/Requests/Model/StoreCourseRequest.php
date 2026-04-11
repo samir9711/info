@@ -33,6 +33,7 @@ class StoreCourseRequest extends BasicRequest
             'is_featured' => 'nullable|boolean',
             'level'=>'nullable|in:beginner,intermediate,advanced',
             'expected_hours'=>'nullable|integer',
+            'video_intro'=>'nullable|string',
 
             'what_will_learn' => ['nullable', 'array'],
 

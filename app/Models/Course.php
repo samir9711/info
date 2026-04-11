@@ -30,7 +30,8 @@ class Course extends BaseModel
         'approval_status' => 'approval_status',
         'is_platform_owned' => 'is_platform_owned',
         'rejection_reason' => 'rejection_reason',
-        'profit_percentage'=>'profit_percentage'
+        'profit_percentage'=>'profit_percentage',
+        'video_intro' => 'video_intro'
 
     ];
 
@@ -52,7 +53,8 @@ class Course extends BaseModel
         'approval_status' => 'integer',
         'is_platform_owned' => 'boolean',
         'rejection_reason' => 'string',
-        'profit_percentage'=>'float'
+        'profit_percentage'=>'float',
+        'video_intro' => 'string'
     ];
 
 
@@ -83,6 +85,11 @@ class Course extends BaseModel
         'is_featured',
         'approval_status',
         'is_platform_owned'
+    ];
+
+    protected array $fileAttributes = [
+        'video_intro' => 'single',
+        'image' => 'single',
     ];
 
     public function category()
