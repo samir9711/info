@@ -20,4 +20,12 @@ class SettingService extends BasicCrudService
 
         $this->resource = SettingResource::class;
     }
+
+    public function setSuccessMark(string $value): Setting
+    {
+        return Setting::updateOrCreate(
+            ['key' => 'success_mark'],
+            ['value' => $value]
+        );
+    }
 }

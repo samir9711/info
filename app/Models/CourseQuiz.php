@@ -41,5 +41,10 @@ class CourseQuiz extends BaseModel
         return $this->belongsTo(Course::class);
     }
 
+    public function attempts()
+    {
+        return $this->hasMany(QuizAttempt::class);
+    }
+
     //
 }

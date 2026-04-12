@@ -9,6 +9,8 @@ use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
+use App\Http\Controllers\CourseQuiz\CourseQuizController;
+use App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Favorite\FavoriteController;
 use App\Http\Controllers\InstructorRating\InstructorRatingController;
@@ -198,6 +200,18 @@ Route::prefix('user')->name('user.')->group(function () {
 
         Route::post('/create',       [InstructorRatingController::class, 'store'])->middleware('auth:user');
         Route::delete('/destroy',    [InstructorRatingController::class, 'destroy'])->middleware('auth:user');
+
+    });
+
+
+    Route::prefix('course-quiz-attempt')->middleware('auth:user')->group(function () {
+        Route::post('/submit',       [CourseQuizAttemptController::class, 'submit']);
+    });
+
+
+    Route::prefix('course-quiz')->middleware('auth:user')->group(function () {
+        Route::post('/by-courseid',       [CourseQuizController::class, 'byCourseId']);
+
 
     });
 

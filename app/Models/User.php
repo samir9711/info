@@ -77,4 +77,14 @@ class User extends BaseAuthModel
     {
         return $this->hasMany(InstructorRating::class);
     }
+
+    public function courseQuizAttempts()
+    {
+        return $this->hasMany(CourseQuizAttempt::class);
+    }
+
+    public function lessonViews()
+    {
+        return $this->hasMany(LessonView::class);
+    }
 }

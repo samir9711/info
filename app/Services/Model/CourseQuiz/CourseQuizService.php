@@ -2,6 +2,8 @@
 
 namespace App\Services\Model\CourseQuiz;
 
+use App\Http\Resources\Model\PublicCourseQuizResource;
+use App\Models\LessonView;
 use App\Services\Basic\BasicCrudService;
 use App\Services\Basic\ModelColumnsService;
 use App\Models\CourseQuiz;
@@ -13,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\Basic\BasicRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CourseQuizService extends BasicCrudService
 {
@@ -195,5 +198,63 @@ class CourseQuizService extends BasicCrudService
                 ]);
             }
         }
+    }
+
+    public function byCourseId(Request $request): mixed
+    {
+        $data = $request->validate([
+            'course_id' => ['required', 'integer', 'exists:courses,id'],
+        ]);
+
+        $userId = auth()->id();
+
+        if (!$userId) {
+            throw ValidationException::withMessages([
+                'user_id' => ['Unauthenticated user.'],
+            ]);
+        }
+
+        $courseQuiz = CourseQuiz::with([
+            'course.lessons',
+            'quiz.questions.answers' => function ($q) {
+                $q->select('id', 'question_id', 'answer', 'is_correct');
+            },
+            'quiz.questions' => function ($q) {
+                $q->select('id', 'quiz_id', 'question', 'image');
+            },
+            'quiz' => function ($q) {
+                $q->select('id', 'title', 'description');
+            },
+        ])
+            ->where('course_id', $data['course_id'])
+            ->firstOrFail();
+
+        $lessonIds = $courseQuiz->course->lessons->pluck('id')->values()->all();
+
+        if (empty($lessonIds)) {
+            throw ValidationException::withMessages([
+                'course_id' => ['لا يمكن جلب الكويز لأن الكورس لا يحتوي على دروس.'],
+            ]);
+        }
+
+        $viewedLessonIds = LessonView::where('user_id', $userId)
+            ->whereIn('lesson_id', $lessonIds)
+            ->distinct()
+            ->pluck('lesson_id')
+            ->values()
+            ->all();
+
+        if (count($viewedLessonIds) !== count($lessonIds)) {
+            throw ValidationException::withMessages([
+                'course_id' => ['لا يمكنك جلب الكويز حتى تشاهد جميع دروس الكورس.'],
+            ]);
+        }
+
+        return new PublicCourseQuizResource($courseQuiz);
+    }
+
+    protected function generateCertificateNumber(int $userId, int $courseId): string
+    {
+        return 'CERT-' . $courseId . '-' . $userId . '-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(5));
     }
 }

@@ -381,4 +381,27 @@ Route::prefix('course-financial-transaction')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController::class, 'deactivate']);
 });
+
+
+// CourseQuizAttempt PUBLIC ROUTES
+Route::prefix('course-quiz-attempt')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CourseQuizAttempt\CourseQuizAttemptController::class, 'deactivate']);
+});
+
+// CourseQuizAttemptAnswer PUBLIC ROUTES
+Route::prefix('course-quiz-attempt-answer')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'deactivate']);
+});
 */

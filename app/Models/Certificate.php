@@ -25,5 +25,27 @@ class Certificate extends BaseModel
         'passing_mark' => 'integer',
     ];
 
+
+    protected array $filterable = [
+        'user_id'=>'int',
+        'course_id'=>'int',
+    ];
+
+    protected array $dynamicFilterColumns = [
+        'user_id' ,
+        'course_id',
+    ];
+
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
+
     //
 }

@@ -31,4 +31,17 @@ class CourseQuizController extends FatherCrudController
             return $this->handleException($e);
         }
     }
+
+
+    public function byCourseId(Request $request): mixed
+    {
+        try {
+            $service = app(CourseQuizService::class);
+            $data[$this->key] = $service->byCourseId($request);
+
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
 }

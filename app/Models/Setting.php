@@ -7,12 +7,13 @@ use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends BaseModel
-{protected $fillable = [
+{
+    protected $fillable = [
         'key' => 'key',
         'value' => 'value',
     ];
 
-protected $casts = [
+    protected $casts = [
     ];
 
     //

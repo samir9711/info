@@ -18,6 +18,7 @@ use App\Http\Controllers\LessonComment\LessonCommentController;
 use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
+use App\Http\Controllers\Setting\SettingController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
@@ -213,6 +214,8 @@ Route::prefix('admin')->group(function () {
         Route::delete('/destroy',    [CourseQuizController::class, 'destroy']);
 
     });
+
+    Route::post('/settings/success-mark', [SettingController::class, 'setSuccessMark'])->middleware('auth:admin');
 
 
 
