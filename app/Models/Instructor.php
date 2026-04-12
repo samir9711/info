@@ -26,6 +26,7 @@ class Instructor extends BaseAuthModel
         'profession' => 'array',
         'bio' => 'array',
         'headline' => 'array',
+        'experience' => 'array',
     ];
 
     protected $hidden = [

@@ -10,6 +10,7 @@ use App\Http\Controllers\CourseApplication\CourseApplicationController;
 use App\Http\Controllers\CourseCondition\CourseConditionController;
 use App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController;
 use App\Http\Controllers\CourseInstructor\CourseInstructorController;
+use App\Http\Controllers\CourseQuiz\CourseQuizController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Lesson\LessonController;
@@ -48,6 +49,16 @@ Route::prefix('instructor')->group(function () {
 
     Route::middleware(['auth:instructor'])->group(function () {
         Route::get('/course-financial-transactions/my-transactions', [CourseFinancialTransactionController::class, 'myTransactions']);
+    });
+
+
+     Route::prefix('course-quiz')->middleware('auth:instructor')->group(function () {
+        Route::get('/all/paginated', [CourseQuizController::class, 'allPaginated']);
+        Route::get('/all',           [CourseQuizController::class, 'all']);
+        Route::post('/create',       [CourseQuizController::class, 'store']);
+        Route::post('/update',       [CourseQuizController::class, 'update']);
+        Route::delete('/destroy',    [CourseQuizController::class, 'destroy']);
+
     });
 
 

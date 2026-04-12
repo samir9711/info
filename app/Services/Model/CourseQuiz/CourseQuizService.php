@@ -3,6 +3,7 @@
 namespace App\Services\Model\CourseQuiz;
 
 use App\Http\Resources\Model\PublicCourseQuizResource;
+use App\Models\CourseInstructor;
 use App\Models\LessonView;
 use App\Services\Basic\BasicCrudService;
 use App\Services\Basic\ModelColumnsService;
@@ -16,6 +17,7 @@ use Illuminate\Validation\ValidationException;
 use App\Http\Requests\Basic\BasicRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class CourseQuizService extends BasicCrudService
 {
@@ -31,16 +33,42 @@ class CourseQuizService extends BasicCrudService
         $this->resource = CourseQuizResource::class;
     }
 
+    protected function allQuery(): object
+    {
+        $query = parent::allQuery();
+
+        if ($this->isAdmin()) {
+            return $query;
+        }
+
+        if ($this->isInstructor()) {
+            $instructorId = $this->getCurrentInstructorId();
+
+            if (!$instructorId) {
+                throw new AuthorizationException(__('messages.forbidden'));
+            }
+
+            return $query->whereHas('course', function ($courseQuery) use ($instructorId) {
+                $courseQuery->whereHas('instructors', function ($instructorQuery) use ($instructorId) {
+                    $instructorQuery->where('instructors.id', $instructorId);
+                });
+            });
+        }
+
+        return $query;
+    }
+
     public function create(BasicRequest $request): mixed
     {
         $data = $request->validated();
 
         return DB::transaction(function () use ($data) {
 
-            $courseId = $data['course_id'];
+            $courseId = (int) $data['course_id'];
             $isFinal  = (bool) ($data['is_final'] ?? false);
             $quizData = $data['quiz'];
 
+            $this->assertActorCanAccessCourse($courseId);
 
             if ($isFinal) {
                 $exists = CourseQuiz::where('course_id', $courseId)
@@ -79,7 +107,7 @@ class CourseQuizService extends BasicCrudService
                     Answer::create([
                         'question_id' => $question->id,
                         'answer'      => $answerData['answer'],
-                        'is_correct'  => (bool) $answerData['is_correct'],
+                        'is_correct'  => (bool) ($answerData['is_correct'] ?? false),
                     ]);
                 }
             }
@@ -103,8 +131,15 @@ class CourseQuizService extends BasicCrudService
             $courseQuiz = CourseQuiz::with(['course', 'quiz.questions.answers'])
                 ->findOrFail($data['id']);
 
+            $targetCourseId = isset($data['course_id'])
+                ? (int) $data['course_id']
+                : (int) $courseQuiz->course_id;
+
+            $this->assertActorCanAccessCourse($targetCourseId);
+            $this->assertActorCanAccessCourse((int) $courseQuiz->course_id);
+
             if (isset($data['course_id'])) {
-                $courseQuiz->course_id = $data['course_id'];
+                $courseQuiz->course_id = (int) $data['course_id'];
             }
 
             if (array_key_exists('is_final', $data)) {
@@ -147,6 +182,8 @@ class CourseQuizService extends BasicCrudService
                 'quiz.lessonQuizzes',
                 'quiz.courseQuizzes',
             ])->findOrFail($request->id);
+
+            $this->assertActorCanAccessCourse((int) $courseQuiz->course_id);
 
             $overview = (new CourseQuizResource($courseQuiz))->resolve();
 
@@ -256,5 +293,51 @@ class CourseQuizService extends BasicCrudService
     protected function generateCertificateNumber(int $userId, int $courseId): string
     {
         return 'CERT-' . $courseId . '-' . $userId . '-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(5));
+    }
+
+     protected function isAdmin(): bool
+    {
+        return auth('admin')->check();
+    }
+
+    protected function isInstructor(): bool
+    {
+        return auth('instructor')->check();
+    }
+
+    protected function getCurrentInstructorId(): ?int
+    {
+        return auth('instructor')->check() ? (int) auth('instructor')->id() : null;
+    }
+
+    protected function assertActorCanAccessCourse(int $courseId): void
+    {
+        if ($this->isAdmin()) {
+            return;
+        }
+
+        if ($this->isInstructor()) {
+            $this->assertInstructorOwnsCourse($courseId);
+            return;
+        }
+
+        throw new AuthorizationException(__('messages.forbidden'));
+    }
+
+    protected function assertInstructorOwnsCourse(int $courseId): void
+    {
+        $instructorId = $this->getCurrentInstructorId();
+
+        if (!$instructorId) {
+            throw new AuthorizationException(__('messages.forbidden'));
+        }
+
+        $allowed = CourseInstructor::where('course_id', $courseId)
+            ->where('instructor_id', $instructorId)
+            ->exists();
+
+        if (!$allowed) {
+            throw new AuthorizationException(__('messages.forbidden'));
+        }
     }
 }
