@@ -32,7 +32,7 @@ class StoreCourseRequest extends BasicRequest
             'published_at' => 'nullable|date_format:Y-m-d H:i:s',
             'is_featured' => 'nullable|boolean',
             'level'=>'nullable|in:beginner,intermediate,advanced',
-            'expected_hours'=>'nullable|integer',
+            'expected_hours'=>'nullable|numeric',
             'video_intro'=>'nullable|string',
 
             'what_will_learn' => ['nullable', 'array'],

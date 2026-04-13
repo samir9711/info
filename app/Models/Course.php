@@ -47,7 +47,7 @@ class Course extends BaseModel
         'published_at' => 'datetime',
         'is_featured' => 'boolean',
         'level' => 'string',
-        'expected_hours' => 'integer',
+        'expected_hours' => 'float',
         'what_will_learn' => 'array',
         'created_by' => 'integer',
         'approval_status' => 'integer',
