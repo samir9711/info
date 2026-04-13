@@ -35,7 +35,7 @@ class LessonVideoController extends Controller
                 'renewals' => 0,
                 'created_at' => now()->toIso8601String(),
             ],
-            now()->addMinutes(15)
+            now()->addMinutes(90)
         );
 
         $expiresAt = now()->addSeconds(self::VIDEO_URL_TTL_SECONDS);
