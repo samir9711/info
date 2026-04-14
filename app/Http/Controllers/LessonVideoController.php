@@ -333,6 +333,25 @@ class LessonVideoController extends Controller
             'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
         ]);
     }
+    public function showForTest(Request $request, Lesson $lesson)
+    {
+        $user = $request->user('user');
+
+        if (!$user) {
+            abort(401);
+        }
+
+        $path = $lesson->video_url;
+
+        if (!$path || !Storage::disk('private')->exists($path)) {
+            abort(404);
+        }
+
+        return response()->file(Storage::disk('private')->path($path), [
+            'Content-Type' => Storage::disk('private')->mimeType($path),
+            'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
+        ]);
+    }
 
     public function showForInstructor(Request $request, Lesson $lesson)
     {

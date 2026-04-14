@@ -167,6 +167,8 @@ Route::prefix('user')->name('user.')->group(function () {
     // تقدّم المستخدم لكورس
     Route::post('/courses/progress', [LessonViewController::class, 'userCourseProgress']);
 
+    Route::get('/{lesson}/video/test',[LessonVideoController::class, 'showForTest']);
+
 
     });
 
