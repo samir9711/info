@@ -27,7 +27,7 @@ class StoreInstructorRequest extends BasicRequest
             'email' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:255',
             'experience' => 'nullable|array',
-            'password' => 'required|string|max:255',
+            'password' => 'nullable|string|max:255',
         ];
     }
 
