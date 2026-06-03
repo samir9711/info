@@ -19,6 +19,7 @@ use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
 use App\Http\Controllers\Setting\SettingController;
+use App\Http\Controllers\Slide\SlideController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
@@ -217,7 +218,15 @@ Route::prefix('admin')->group(function () {
 
     Route::post('/settings/success-mark', [SettingController::class, 'setSuccessMark'])->middleware('auth:admin');
 
+    Route::prefix('slide')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [SlideController::class, 'allPaginated']);
+        Route::get('/all',           [SlideController::class, 'all']);
+        Route::post('/show',         [SlideController::class, 'show']);
+        Route::post('/create',       [SlideController::class, 'store']);
+        Route::post('/update',       [SlideController::class, 'update']);
+        Route::delete('/destroy',    [SlideController::class, 'destroy']);
 
+    });
 
 
 

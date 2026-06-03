@@ -11,6 +11,8 @@ class AppServiceProvider extends ServiceProvider
 {
 
      protected $facades = [
+    'SlideService' => \App\Services\Model\Slide\SlideService::class,
+
     'CourseQuizAttemptAnswerService' => \App\Services\Model\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerService::class,
 
     'CourseQuizAttemptService' => \App\Services\Model\CourseQuizAttempt\CourseQuizAttemptService::class,

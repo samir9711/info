@@ -18,6 +18,7 @@ use App\Http\Controllers\LessonComment\LessonCommentController;
 use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
+use App\Http\Controllers\Slide\SlideController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
@@ -58,6 +59,14 @@ Route::prefix('instructor')->group(function () {
         Route::post('/create',       [CourseQuizController::class, 'store']);
         Route::post('/update',       [CourseQuizController::class, 'update']);
         Route::delete('/destroy',    [CourseQuizController::class, 'destroy']);
+
+    });
+
+    Route::prefix('slide')->middleware('auth:instructor')->group(function () {
+        Route::get('/all/paginated', [SlideController::class, 'allPaginated']);
+        Route::get('/all',           [SlideController::class, 'all']);
+        Route::post('/show',         [SlideController::class, 'show']);
+
 
     });
 

@@ -23,6 +23,7 @@ use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
 use App\Http\Controllers\QuizAttempt\QuizAttemptController;
+use App\Http\Controllers\Slide\SlideController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
@@ -146,11 +147,13 @@ Route::prefix('user')->name('user.')->group(function () {
         Route::get('lessons/{lesson}/video', [LessonVideoController::class, 'stream'])
             ->name('api.lessons.video');
         Route::post('lessons/{lesson}/video/refresh', [LessonVideoController::class, 'refresh']);
-    });
 
-    Route::get('lessons/{lesson}/video/file', [LessonVideoController::class, 'getVideoFile'])
+         Route::get('lessons/{lesson}/video/file', [LessonVideoController::class, 'getVideoFile'])
         ->middleware('signed')
         ->name('api.lessons.video.file');
+    });
+
+
 
 
 
@@ -216,6 +219,15 @@ Route::prefix('user')->name('user.')->group(function () {
 
 
     });
+    
+    Route::prefix('slide')->middleware('auth:user')->group(function () {
+        Route::get('/all/paginated', [SlideController::class, 'allPaginated']);
+        Route::get('/all',           [SlideController::class, 'all']);
+        Route::post('/show',         [SlideController::class, 'show']);
+
+
+    });
+
 
 
 

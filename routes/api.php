@@ -405,3 +405,16 @@ Route::prefix('course-quiz-attempt-answer')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerController::class, 'deactivate']);
 });
 */
+
+// Slide PUBLIC ROUTES
+/*
+Route::prefix('slide')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\Slide\SlideController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\Slide\SlideController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\Slide\SlideController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\Slide\SlideController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\Slide\SlideController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\Slide\SlideController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\Slide\SlideController::class, 'deactivate']);
+});
+*/

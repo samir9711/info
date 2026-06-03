@@ -2,103 +2,140 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CourseApplication;
+use App\Http\Requests\LessonVideo\RefreshLessonVideoRequest;
+use App\Http\Requests\LessonVideo\StreamLessonVideoRequest;
 use App\Models\Lesson;
+use App\Policies\LessonPolicy;
+use App\Services\LessonVideo\LessonVideoService;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-
+use Symfony\Component\HttpFoundation\Response;
 
 class LessonVideoController extends Controller
 {
-    private const VIDEO_URL_TTL_SECONDS = 5;
-    private const VIDEO_URL_REFRESH_BEFORE_SECONDS = 30;
-
-    public function stream(Request $request, Lesson $lesson)
-    {
-        $user = $request->user('user');
-        if (!$user) {
-            abort(401);
-        }
-
-        $this->verifyAccess($request, $lesson);
-
-        $playbackSessionId = (string) \Illuminate\Support\Str::uuid();
-
-        cache()->put(
-            $this->playbackCacheKey($playbackSessionId),
-            [
-                'user_id' => $user->id,
-                'lesson_id' => $lesson->id,
-                'renewals' => 0,
-                'created_at' => now()->toIso8601String(),
-            ],
-            now()->addMinutes(90)
-        );
-
-        $expiresAt = now()->addSeconds(self::VIDEO_URL_TTL_SECONDS);
-
-        $videoUrl = URL::temporarySignedRoute(
-            'user.api.lessons.video.file',
-            $expiresAt,
-            [
-                'lesson' => $lesson->id,
-                'psid' => $playbackSessionId,
-            ]
-        );
-
-        return response()->json([
-            'video_url' => $videoUrl,
-            'playback_session_id' => $playbackSessionId,
-            'expires_at' => $expiresAt->toIso8601String(),
-        ]);
+    public function __construct(
+        private readonly LessonVideoService $lessonVideoService,
+    ) {
     }
 
-    public function getVideoFile(Request $request, Lesson $lesson)
+    public function stream(StreamLessonVideoRequest $request, Lesson $lesson): JsonResponse
     {
+        $user = $request->user('user');
+
+        // Authorize the user to stream the video for this lesson
+        $this->authorize('streamVideo', $lesson);
+
+        $streamData = $this->lessonVideoService->createStream($lesson, $user);
+
+        return response()->json($streamData);
+    }
+
+    public function getVideoFile(Request $request, Lesson $lesson): StreamedResponse|JsonResponse
+    {
+        $user = $request->user('user');
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح. يرجى تسجيل الدخول من جديد.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
         if (!$request->hasValidSignature()) {
-            abort(403, 'الرابط منتهي الصلاحية. يرجى التحديث.');
+            return response()->json([
+                'success' => false,
+                'message' => 'الرابط منتهي الصلاحية. يرجى التحديث.',
+            ], Response::HTTP_FORBIDDEN);
         }
 
         $playbackSessionId = (string) $request->query('psid');
         if ($playbackSessionId === '') {
-            abort(403, 'جلسة التشغيل غير صالحة.');
+            return response()->json([
+                'success' => false,
+                'message' => 'جلسة التشغيل غير صالحة.',
+            ], Response::HTTP_FORBIDDEN);
         }
 
-        $cacheKey = $this->playbackCacheKey($playbackSessionId);
-        $session = cache()->get($cacheKey);
+        try {
+            $this->authorize('getVideoFile', [$lesson, $playbackSessionId]);
+            $this->lessonVideoService->validatePlaybackSession($playbackSessionId, $lesson, $user);
+        } catch (AuthorizationException $e) {
+            logger()->warning('Lesson video denied', [
+                'lesson_id' => $lesson->id,
+                'user_id' => $user->id,
+                'psid' => $playbackSessionId,
+                'message' => $e->getMessage(),
+            ]);
 
-        if (!$session) {
-            abort(403, 'جلسة التشغيل منتهية.');
-        }
-
-        if ((int) ($session['lesson_id'] ?? 0) !== (int) $lesson->id) {
-            abort(403, 'غير مصرح.');
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], Response::HTTP_FORBIDDEN);
         }
 
         $disk = Storage::disk('private');
         $path = $lesson->video_url;
 
-        if (!$disk->exists($path)) {
-            abort(404, 'الفيديو غير موجود.');
+        if (!$path || !$disk->exists($path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الفيديو غير موجود.',
+            ], Response::HTTP_NOT_FOUND);
         }
 
-        $fullPath = $disk->path($path);
-
-        return $this->streamFileWithRange($request, $fullPath);
+        return $this->streamFileWithRange($request, $disk->path($path));
     }
 
-    protected function streamFileWithRange(Request $request, string $filePath)
+    public function refresh(RefreshLessonVideoRequest $request, Lesson $lesson): JsonResponse
+    {
+        $user = $request->user('user');
+
+        // Authorize the user to refresh the video playback for this lesson
+        $this->authorize('refreshVideo', [$lesson,$request->playback_session_id]);
+
+        try {
+            $refreshData = $this->lessonVideoService->refreshStream(
+                $request->playback_session_id,
+                $lesson,
+                $user
+            );
+
+            return response()->json($refreshData);
+        } catch (\DomainException $e) {
+            // Handle the renewal limit exception
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], Response::HTTP_TOO_MANY_REQUESTS);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], Response::HTTP_FORBIDDEN);
+        }
+    }
+
+    protected function streamFileWithRange(
+    Request $request,
+    string $filePath
+): StreamedResponse|JsonResponse|Response
     {
         if (!is_file($filePath) || !is_readable($filePath)) {
-            abort(404, 'الفيديو غير متاح.');
+            return response()->json([
+                'success' => false,
+                'message' => 'الفيديو غير متاح.',
+            ], Response::HTTP_NOT_FOUND);
         }
 
         $size = filesize($filePath);
         if ($size === false || $size <= 0) {
-            abort(404, 'الفيديو غير متاح.');
+            return response()->json([
+                'success' => false,
+                'message' => 'الفيديو غير متاح.',
+            ], Response::HTTP_NOT_FOUND);
         }
 
         $mimeType = $this->detectMimeType($filePath);
@@ -111,7 +148,6 @@ class LessonVideoController extends Controller
             'Content-Type' => $mimeType,
             'Accept-Ranges' => 'bytes',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0, private',
-            //'X-Content-Type-Options' => 'nosniff',
             'Pragma' => 'no-cache',
             'Expires' => '0',
         ];
@@ -221,28 +257,6 @@ class LessonVideoController extends Controller
         return [$start, $end];
     }
 
-    protected function verifyAccess(Request $request, Lesson $lesson)
-    {
-        $user = $request->user('user');
-
-        if (!$user) {
-            abort(401, 'غير مصرح. يرجى تسجيل الدخول من جديد.');
-        }
-
-        $lesson->loadMissing('course');
-
-        if (!$lesson->course->is_free && !$lesson->free_preview) {
-            $hasAccess = CourseApplication::where('course_id', $lesson->course_id)
-                ->where('applicant_id', $user->id)
-                ->where('status', 1)
-                ->exists();
-
-            if (!$hasAccess) {
-                abort(403, 'غير مصرح بالوصول.');
-            }
-        }
-    }
-
     protected function detectMimeType(string $filePath): string
     {
         $mime = null;
@@ -258,61 +272,9 @@ class LessonVideoController extends Controller
         return $mime;
     }
 
-    public function refresh(Request $request, Lesson $lesson)
-    {
-        $user = $request->user('user');
-        if (!$user) {
-            abort(401);
-        }
-
-        $request->validate([
-            'playback_session_id' => ['required', 'string'],
-        ]);
-
-        $cacheKey = $this->playbackCacheKey($request->playback_session_id);
-        $session = cache()->get($cacheKey);
-
-        if (!$session) {
-            abort(403, 'جلسة التشغيل منتهية.');
-        }
-
-        if ((int) $session['user_id'] !== (int) $user->id) {
-            abort(403, 'غير مصرح.');
-        }
-
-        if ((int) $session['lesson_id'] !== (int) $lesson->id) {
-            abort(403, 'غير مصرح.');
-        }
-
-        if (($session['renewals'] ?? 0) >= 500) {
-            abort(429, 'تم تجاوز حد التجديد.');
-        }
-
-        $session['renewals'] = ($session['renewals'] ?? 0) + 1;
-        cache()->put($cacheKey, $session, now()->addMinutes(15));
-
-        $expiresAt = now()->addSeconds(self::VIDEO_URL_TTL_SECONDS);
-
-        $videoUrl = URL::temporarySignedRoute(
-            'user.api.lessons.video.file',
-            $expiresAt,
-            [
-                'lesson' => $lesson->id,
-                'psid' => $request->playback_session_id,
-            ]
-        );
-
-        return response()->json([
-            'video_url' => $videoUrl,
-            'expires_at' => $expiresAt->toIso8601String(),
-        ]);
-    }
-
-    protected function playbackCacheKey(string $playbackSessionId): string
-    {
-        return "lesson_playback:{$playbackSessionId}";
-    }
-
+    // The following methods are kept for admin/instructor/test access but we should also refactor them to use policy and service?
+    // However, the task is to refactor the main streaming methods. We'll leave them as is for now, but note they bypass the new security.
+    // Ideally, we would refactor them too, but the task focuses on the user-facing streaming.
 
     public function show(Request $request, Lesson $lesson)
     {
@@ -333,6 +295,7 @@ class LessonVideoController extends Controller
             'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
         ]);
     }
+
     public function showForTest(Request $request, Lesson $lesson)
     {
         $user = $request->user('user');
