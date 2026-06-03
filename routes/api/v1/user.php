@@ -219,8 +219,8 @@ Route::prefix('user')->name('user.')->group(function () {
 
 
     });
-    
-    Route::prefix('slide')->middleware('auth:user')->group(function () {
+
+    Route::prefix('slide')->group(function () {
         Route::get('/all/paginated', [SlideController::class, 'allPaginated']);
         Route::get('/all',           [SlideController::class, 'all']);
         Route::post('/show',         [SlideController::class, 'show']);
