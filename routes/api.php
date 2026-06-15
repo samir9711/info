@@ -418,3 +418,87 @@ Route::prefix('slide')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\Slide\SlideController::class, 'deactivate']);
 });
 */
+
+// Company PUBLIC ROUTES
+/*
+Route::prefix('company')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\Company\CompanyController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\Company\CompanyController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\Company\CompanyController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\Company\CompanyController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\Company\CompanyController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\Company\CompanyController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\Company\CompanyController::class, 'deactivate']);
+});
+*/
+// CompanyContactInfo PUBLIC ROUTES
+/*
+Route::prefix('company-contact-info')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController::class, 'deactivate']);
+});
+*/
+// CompanyGalleryImage PUBLIC ROUTES
+/*
+Route::prefix('company-gallery-image')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController::class, 'deactivate']);
+});
+*/
+// CompanyJob PUBLIC ROUTES
+Route::prefix('company-job')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'deactivate']);
+});
+
+// CompanyRecommendedCourse PUBLIC ROUTES
+/*
+Route::prefix('company-recommended-course')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController::class, 'deactivate']);
+});
+*/
+// CompanySection PUBLIC ROUTES
+/*
+Route::prefix('company-section')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'deactivate']);
+});
+*/
+// CompanySkill PUBLIC ROUTES
+/*
+Route::prefix('company-skill')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'deactivate']);
+});
+*/

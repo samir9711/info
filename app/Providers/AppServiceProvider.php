@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Functional\AdminAuthService;
 use App\Services\Functional\UserAuthService;
+use App\Services\Functional\CompanyAuthService;
 use Illuminate\Support\ServiceProvider;
 use App\Exceptions\Handler;
 
@@ -11,6 +12,20 @@ class AppServiceProvider extends ServiceProvider
 {
 
      protected $facades = [
+    'CompanySkillService' => \App\Services\Model\CompanySkill\CompanySkillService::class,
+
+    'CompanySectionService' => \App\Services\Model\CompanySection\CompanySectionService::class,
+
+    'CompanyRecommendedCourseService' => \App\Services\Model\CompanyRecommendedCourse\CompanyRecommendedCourseService::class,
+
+    'CompanyJobService' => \App\Services\Model\CompanyJob\CompanyJobService::class,
+
+    'CompanyGalleryImageService' => \App\Services\Model\CompanyGalleryImage\CompanyGalleryImageService::class,
+
+    'CompanyContactInfoService' => \App\Services\Model\CompanyContactInfo\CompanyContactInfoService::class,
+
+    'CompanyService' => \App\Services\Model\Company\CompanyService::class,
+
     'SlideService' => \App\Services\Model\Slide\SlideService::class,
 
     'CourseQuizAttemptAnswerService' => \App\Services\Model\CourseQuizAttemptAnswer\CourseQuizAttemptAnswerService::class,
@@ -92,6 +107,8 @@ class AppServiceProvider extends ServiceProvider
     'AdminAuthService' => AdminAuthService::class,
 
     'UserAuthService' => UserAuthService::class,
+
+    'CompanyAuthService' => CompanyAuthService::class,
 
 
      ];

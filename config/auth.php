@@ -60,6 +60,10 @@ return [
             'driver' => 'sanctum',
             'provider' => 'instructors',
         ],
+        'company' => [
+            'driver' => 'sanctum',
+            'provider' => 'companies',
+        ],
     ],
 
     /*
@@ -95,6 +99,10 @@ return [
             'model' => env('AUTH_MODEL', App\Models\Instructor::class),
         ],
 
+        'companies' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', App\Models\Company::class),
+        ],
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',

@@ -4,6 +4,7 @@
 use App\Http\Controllers\Article\ArticleController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Category\CategoryController;
+use App\Http\Controllers\Company\CompanyController;
 use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
@@ -226,6 +227,16 @@ Route::prefix('admin')->group(function () {
         Route::post('/update',       [SlideController::class, 'update']);
         Route::delete('/destroy',    [SlideController::class, 'destroy']);
 
+    });
+
+
+    Route::prefix('company')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [CompanyController::class, 'allPaginated']);
+        Route::get('/all',           [CompanyController::class, 'all']);
+        Route::post('/show',         [CompanyController::class, 'show']);
+        Route::post('/create',       [CompanyController::class, 'store']);
+        Route::post('/update',       [CompanyController::class, 'update']);
+        Route::delete('/destroy',    [CompanyController::class, 'destroy']);
     });
 
 
