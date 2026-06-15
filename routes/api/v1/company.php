@@ -2,6 +2,7 @@
 
 
 use App\Http\Controllers\Auth\CompanyAuthController;
+use App\Http\Controllers\Company\CompanyController;
 use App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController;
 use App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController;
 use App\Http\Controllers\CompanyJob\CompanyJobController;
@@ -69,6 +70,10 @@ Route::prefix('company')->group(function () {
         Route::post('/create',       [CompanyJobController::class, 'store']);
         Route::post('/update',       [CompanyJobController::class, 'update']);
         Route::delete('/delete',     [CompanyJobController::class, 'destroy']);
+    });
+
+    Route::middleware('auth:company')->group(function () {
+        Route::post('/profile', [CompanyController::class, 'updateProfile']);
     });
 });
 

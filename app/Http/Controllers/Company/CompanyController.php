@@ -6,6 +6,7 @@ use App\Facades\Services\Company\CompanyFacade;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\FatherCrudController;
 use App\Http\Requests\Model\StoreCompanyRequest;
+use App\Http\Requests\Model\UpdateCompanyProfileRequest;
 use Illuminate\Http\Request;
 
 class CompanyController extends FatherCrudController
@@ -15,5 +16,17 @@ class CompanyController extends FatherCrudController
         $this->service = CompanyFacade::class;
         $this->createRequest = StoreCompanyRequest::class;
         $this->updateRequest = StoreCompanyRequest::class;
+    }
+
+
+    public function updateProfile(UpdateCompanyProfileRequest $request)
+    {
+        try {
+            return $this->apiResponse(
+                $this->service::updateProfile($request)
+            );
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
     }
 }
