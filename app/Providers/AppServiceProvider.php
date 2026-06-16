@@ -14,6 +14,10 @@ class AppServiceProvider extends ServiceProvider
      protected $facades = [
     'CompanySkillService' => \App\Services\Model\CompanySkill\CompanySkillService::class,
 
+    'SkillService' => \App\Services\Model\Skill\SkillService::class,
+
+
+
     'CompanySectionService' => \App\Services\Model\CompanySection\CompanySectionService::class,
 
     'CompanyRecommendedCourseService' => \App\Services\Model\CompanyRecommendedCourse\CompanyRecommendedCourseService::class,

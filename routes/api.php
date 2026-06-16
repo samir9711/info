@@ -456,6 +456,7 @@ Route::prefix('company-gallery-image')->group(function () {
 });
 */
 // CompanyJob PUBLIC ROUTES
+/*
 Route::prefix('company-job')->group(function () {
     Route::get('/all/paginated', [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'allPaginated']);
     Route::get('/all',           [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'all']);
@@ -465,7 +466,7 @@ Route::prefix('company-job')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\CompanyJob\CompanyJobController::class, 'deactivate']);
 });
-
+*/
 // CompanyRecommendedCourse PUBLIC ROUTES
 /*
 Route::prefix('company-recommended-course')->group(function () {
@@ -490,6 +491,21 @@ Route::prefix('company-section')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\CompanySection\CompanySectionController::class, 'deactivate']);
 });
 */
+
+
+// Skill PUBLIC ROUTES
+/*
+Route::prefix('skill')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\Skill\SkillController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\Skill\SkillController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\Skill\SkillController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\Skill\SkillController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\Skill\SkillController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\Skill\SkillController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\Skill\SkillController::class, 'deactivate']);
+});
+*/
+
 // CompanySkill PUBLIC ROUTES
 /*
 Route::prefix('company-skill')->group(function () {

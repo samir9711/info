@@ -2,28 +2,21 @@
 
 namespace App\Http\Resources\Model;
 
-use App\Models\CompanySkill;
+use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Basic\BasicResource;
 use App\Services\Basic\ModelColumnsService;
 
-class CompanySkillResource extends BasicResource
+class SkillResource extends BasicResource
 {
     public function toArray(Request $request): array
     {
-        $data = $this->initResource(
+        return $this->initResource(
             ModelColumnsService::getServiceFor(
-                CompanySkill::class
+                Skill::class
             )
         );
-        $data['company'] = $this->whenLoaded('company', function () {
-            return $this->company ? $this->company->toArray() : null;
-        });
-        $data['skill'] = $this->whenLoaded('skill', function () {
-            return $this->skill ? $this->skill->toArray() : null;
-        });
-        return $data;
     }
 
     protected function initResource($modelColumnsService): array

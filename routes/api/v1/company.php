@@ -9,6 +9,7 @@ use App\Http\Controllers\CompanyJob\CompanyJobController;
 use App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController;
 use App\Http\Controllers\CompanySection\CompanySectionController;
 use App\Http\Controllers\CompanySkill\CompanySkillController;
+use App\Http\Controllers\Skill\SkillController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('company')->group(function () {
@@ -54,13 +55,20 @@ Route::prefix('company')->group(function () {
         Route::delete('/delete',     [CompanyRecommendedCourseController::class, 'destroy']);
     });
 
-    Route::prefix('skill')->middleware('auth:company')->group(function () {
+    Route::prefix('company-skill')->middleware('auth:company')->group(function () {
         Route::get('/all/paginated', [CompanySkillController::class, 'allPaginated']);
         Route::get('/all',           [CompanySkillController::class, 'all']);
         Route::post('/show',         [CompanySkillController::class, 'show']);
         Route::post('/create',       [CompanySkillController::class, 'store']);
         Route::post('/update',       [CompanySkillController::class, 'update']);
         Route::delete('/delete',     [CompanySkillController::class, 'destroy']);
+    });
+
+    Route::prefix('skill')->middleware('auth:company')->group(function () {
+        Route::get('/all/paginated', [SkillController::class, 'allPaginated']);
+        Route::get('/all',           [SkillController::class, 'all']);
+        Route::post('/show',         [SkillController::class, 'show']);
+
     });
 
     Route::prefix('company-job')->middleware('auth:company')->group(function () {

@@ -20,6 +20,7 @@ use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
 use App\Http\Controllers\Setting\SettingController;
+use App\Http\Controllers\Skill\SkillController;
 use App\Http\Controllers\Slide\SlideController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\User\UserController;
@@ -239,7 +240,14 @@ Route::prefix('admin')->group(function () {
         Route::delete('/destroy',    [CompanyController::class, 'destroy']);
     });
 
-
+    Route::prefix('skill')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [SkillController::class, 'allPaginated']);
+        Route::get('/all',           [SkillController::class, 'all']);
+        Route::post('/show',         [SkillController::class, 'show']);
+        Route::post('/create',       [SkillController::class, 'store']);
+        Route::post('/update',       [SkillController::class, 'update']);
+        Route::delete('/destroy',    [SkillController::class, 'destroy']);
+    });
 
 });
 

@@ -4,7 +4,7 @@ namespace App\Http\Requests\Model;
 
 use App\Http\Requests\Basic\BasicRequest;use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCompanySkillRequest extends BasicRequest
+class StoreSkillRequest extends BasicRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -19,9 +19,8 @@ class StoreCompanySkillRequest extends BasicRequest
     public function rules(): array
     {
         return [
-            //'company_id' => 'required|integer|exists:companies,id',
-            'skill_id' => 'required|integer|exists:skills,id',
-            'description' => 'nullable|string|max:255',
+            'name' => 'required|array|max:255',
+            'description' => 'nullable|array|max:255',
         ];
     }
 

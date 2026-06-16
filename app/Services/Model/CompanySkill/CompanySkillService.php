@@ -23,7 +23,7 @@ class CompanySkillService extends BasicCrudService
         );
 
         $this->resource = CompanySkillResource::class;
-        $this->relations = ['company'];
+        $this->relations = ['company', 'skill'];
     }
 
     protected function companyId(): int
