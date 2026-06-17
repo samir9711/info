@@ -46,4 +46,17 @@ class CompanyService extends BasicCrudService
             return $this->resource::make($company->fresh());
         });
     }
+
+    public function getMyProfile(): mixed
+    {
+        $company = auth('company')->user();
+
+        if (!$company) {
+            throw ValidationException::withMessages([
+                'auth' => ['Only company accounts can access this profile.'],
+            ]);
+        }
+
+        return $this->resource::make($company);
+    }
 }

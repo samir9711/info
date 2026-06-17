@@ -82,6 +82,7 @@ Route::prefix('company')->group(function () {
 
     Route::middleware('auth:company')->group(function () {
         Route::post('/profile', [CompanyController::class, 'updateProfile']);
+        Route::get('/my-profile', [CompanyController::class, 'myProfile']);
     });
 });
 
