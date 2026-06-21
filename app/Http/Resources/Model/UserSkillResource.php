@@ -12,11 +12,17 @@ class UserSkillResource extends BasicResource
 {
     public function toArray(Request $request): array
     {
-        return $this->initResource(
+        $data = $this->initResource(
             ModelColumnsService::getServiceFor(
                 UserSkill::class
             )
         );
+        $data['skill'] = $this->whenLoaded('skill', function () {
+            return $this->skill ? $this->skill->toArray() : null;
+        });
+
+
+        return $data;
     }
 
     protected function initResource($modelColumnsService): array
