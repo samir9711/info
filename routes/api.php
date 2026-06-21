@@ -518,3 +518,14 @@ Route::prefix('company-skill')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\CompanySkill\CompanySkillController::class, 'deactivate']);
 });
 */
+
+// UserSkill PUBLIC ROUTES
+Route::prefix('user-skill')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\UserSkill\UserSkillController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\UserSkill\UserSkillController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\UserSkill\UserSkillController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\UserSkill\UserSkillController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\UserSkill\UserSkillController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\UserSkill\UserSkillController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\UserSkill\UserSkillController::class, 'deactivate']);
+});

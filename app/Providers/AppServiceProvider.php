@@ -12,6 +12,8 @@ class AppServiceProvider extends ServiceProvider
 {
 
      protected $facades = [
+    'UserSkillService' => \App\Services\Model\UserSkill\UserSkillService::class,
+
     'CompanySkillService' => \App\Services\Model\CompanySkill\CompanySkillService::class,
 
     'SkillService' => \App\Services\Model\Skill\SkillService::class,

@@ -23,9 +23,11 @@ use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
 use App\Http\Controllers\QuizAttempt\QuizAttemptController;
+use App\Http\Controllers\Skill\SkillController;
 use App\Http\Controllers\Slide\SlideController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\UserSkill\UserSkillController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
 use Illuminate\Support\Facades\Route;
 
@@ -227,6 +229,20 @@ Route::prefix('user')->name('user.')->group(function () {
 
 
     });
+
+    Route::prefix('skill')->group(function () {
+        Route::get('/all/paginated', [SkillController::class, 'allPaginated']);
+        Route::get('/all',           [SkillController::class, 'all']);
+        Route::post('/show',         [SkillController::class, 'show']);
+
+    });
+
+    Route::prefix('user-skill')->group(function () {
+        Route::post('/bulk', [UserSkillController::class, 'storeMany']);
+        Route::delete('/bulk', [UserSkillController::class, 'destroyMany']);
+        Route::get('/my', [UserSkillController::class, 'mySkills']);
+    });
+
 
 
 
