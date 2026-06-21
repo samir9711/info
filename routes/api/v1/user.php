@@ -30,6 +30,7 @@ use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\UserSkill\UserSkillController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 
 Route::prefix('user')->name('user.')->group(function () {
@@ -39,6 +40,9 @@ Route::prefix('user')->name('user.')->group(function () {
     Route::post('register/verify', [UserAuthController::class, 'verifyOtp'])->name('register.verify');
     // Login (email+pass | phone+pass | social_id)
     Route::post('login', [UserAuthController::class, 'login'])->name('login');
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    })->middleware('auth:sanctum');
 
     // Social register/login (upsert)
     //Route::post('social/register', [UserAuthController::class, 'socialRegister'])->name('social.register');
@@ -55,6 +59,7 @@ Route::prefix('user')->name('user.')->group(function () {
        // Route::post('verify-phone-change-otp', [UserAuthController::class, 'verifyOtp'])->name('phone.verify_change'); //set the same method
        // Route::post('update-language', [UserAuthController::class, 'updateLanguage'])->name('language.update');
         Route::post('logout', [UserAuthController::class, 'logout'])->name('logout');
+        Route::post('update-profile', [UserController::class, 'updateMyProfile']);
     });
 
 
