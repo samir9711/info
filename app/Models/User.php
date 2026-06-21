@@ -38,6 +38,7 @@ class User extends BaseAuthModel
         'status' => 'status',
         'otp_delivery_method' => 'otp_delivery_method',
         'remember_token' => 'remember_token',
+        'cv' => 'cv',
     ];
 
     protected $casts = [
@@ -59,6 +60,11 @@ class User extends BaseAuthModel
     ];
 
     protected $search = ['first_name', 'last_name', 'email', 'phone'];
+
+    protected array $fileAttributes = [
+        'image' => 'single',
+        'cv' => 'single',
+    ];
 
     /**
      * Get the attributes that should be cast.

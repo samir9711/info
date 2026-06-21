@@ -70,7 +70,8 @@ class StoreUserRequest extends BasicRequest
                 'status' => 'nullable|boolean',
                 'otp_delivery_method' => 'nullable|in:sms,whatsapp,email',
                 'remember_token' => 'nullable|string|max:100',
-               
+                'cv' => 'nullable|string|max:255',
+
 
             ];
         }
@@ -95,6 +96,7 @@ class StoreUserRequest extends BasicRequest
             'status' => 'nullable|boolean',
             'otp_delivery_method' => 'nullable|in:sms,whatsapp,email',
             'remember_token' => 'nullable|string|max:100',
+            'cv' => 'nullable|string|max:255',
 
 
         ];
