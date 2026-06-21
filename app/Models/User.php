@@ -93,4 +93,9 @@ class User extends BaseAuthModel
     {
         return $this->hasMany(LessonView::class);
     }
+
+    public function userSkills()
+    {
+        return $this->hasMany(UserSkill::class)->with('skill');
+    }
 }
