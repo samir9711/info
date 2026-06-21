@@ -26,7 +26,7 @@ class UploadController extends Controller
 
                         $allowedMime = [
                             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-                            'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm'
+                            'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm','application/pdf'
                         ];
                         if (!in_array($value->getMimeType(), $allowedMime)) {
                             $fail('الملف يجب أن يكون صورة أو فيديو بصيغة مدعومة.');
