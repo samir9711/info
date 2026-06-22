@@ -21,6 +21,7 @@ class UpdateUserProfileRequest extends BasicRequest
             'residence' => 'nullable|string|max:255',
             'email' => 'sometimes|email|max:255',
             'password' => 'nullable|string|min:8|confirmed',
+            'cv' => 'nullable|string|max:255',
         ];
     }
-} 
+}
