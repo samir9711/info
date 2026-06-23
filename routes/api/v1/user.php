@@ -263,7 +263,7 @@ Route::prefix('user')->name('user.')->group(function () {
         Route::get('/all',           [CompanyController::class, 'all']);
         Route::post('/show',         [CompanyController::class, 'show']);
         Route::post('/overview',     [CompanyController::class, 'overview']);
-        Route::get('/jobs',     [CompanyJobController::class, 'allJobsPaginated']);
+        Route::get('/jobs',          [CompanyJobController::class, 'allJobsPaginated']);
     });
 
 

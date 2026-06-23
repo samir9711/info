@@ -10,6 +10,7 @@ use App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseContro
 use App\Http\Controllers\CompanySection\CompanySectionController;
 use App\Http\Controllers\CompanySkill\CompanySkillController;
 use App\Http\Controllers\Skill\SkillController;
+use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('company')->group(function () {
@@ -83,6 +84,13 @@ Route::prefix('company')->group(function () {
     Route::middleware('auth:company')->group(function () {
         Route::post('/profile', [CompanyController::class, 'updateProfile']);
         Route::get('/my-profile', [CompanyController::class, 'myProfile']);
+    });
+
+     Route::prefix('user')->middleware('auth:company')->group(function () {
+        Route::get('/all/paginated', [UserController::class, 'allPaginated']);
+        Route::get('/all',           [UserController::class, 'all']);
+        Route::post('/show',         [UserController::class, 'show']);
+      
     });
 });
 
