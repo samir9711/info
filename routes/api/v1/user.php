@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\UserAuthController;
 
 use App\Http\Controllers\Badge\BadgeController;
 use App\Http\Controllers\Category\CategoryController;
+use App\Http\Controllers\Company\CompanyController;
+use App\Http\Controllers\CompanyJob\CompanyJobController;
 use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
@@ -246,6 +248,21 @@ Route::prefix('user')->name('user.')->group(function () {
         Route::post('/bulk', [UserSkillController::class, 'storeMany']);
         Route::delete('/bulk', [UserSkillController::class, 'destroyMany']);
         Route::get('/my', [UserSkillController::class, 'mySkills']);
+    });
+
+
+    Route::prefix('company-job')->group(function () {
+        Route::get('/all/paginated', [CompanyJobController::class, 'allPaginated']);
+        Route::get('/all',           [CompanyJobController::class, 'all']);
+        Route::post('/show',         [CompanyJobController::class, 'show']);
+
+    });
+
+    Route::prefix('company')->group(function () {
+        Route::get('/all/paginated', [CompanyController::class, 'allPaginated']);
+        Route::get('/all',           [CompanyController::class, 'all']);
+        Route::post('/show',         [CompanyController::class, 'show']);
+        Route::post('/overview',     [CompanyController::class, 'overview']);
     });
 
 

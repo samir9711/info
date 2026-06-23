@@ -9,6 +9,7 @@ use App\Http\Resources\Model\CompanyResource;
 use App\Http\Requests\Basic\BasicRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Http\Request;
 
 class CompanyService extends BasicCrudService
 {
@@ -56,6 +57,33 @@ class CompanyService extends BasicCrudService
                 'auth' => ['Only company accounts can access this profile.'],
             ]);
         }
+
+        return $this->resource::make($company);
+    }
+
+    public function overview(Request $request): mixed
+    {
+        $validated = validator($request->all(), [
+            'company_id' => 'required|integer|exists:companies,id',
+        ])->validate();
+
+        $company = Company::query()
+            ->with([
+                'contactInfo',
+                'galleryImages' => fn ($q) => $q->orderBy('sort_order'),
+                'sections' => fn ($q) => $q->orderBy('sort_order'),
+                'skills.skill',
+                'recommendedCourses.course',
+                'jobs.currency',
+            ])
+            ->withCount([
+                'sections',
+                'skills',
+                'galleryImages',
+                'recommendedCourses',
+                'jobs',
+            ])
+            ->findOrFail($validated['company_id']);
 
         return $this->resource::make($company);
     }

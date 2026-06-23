@@ -30,6 +30,16 @@ class CompanyController extends FatherCrudController
         }
     }
 
+    public function overview(Request $request)
+    {
+        try {
+            return $this->apiResponse(
+                $this->service::overview($request)
+            );
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
     public function myProfile()
     {
         try {
