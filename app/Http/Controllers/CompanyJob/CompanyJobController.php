@@ -16,4 +16,15 @@ class CompanyJobController extends FatherCrudController
         $this->createRequest = StoreCompanyJobRequest::class;
         $this->updateRequest = StoreCompanyJobRequest::class;
     }
+
+    public function allJobsPaginated(Request $request)
+    {
+        try {
+            return $this->apiResponse(
+                $this->service::allJobsPaginated($request)
+            );
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
 }

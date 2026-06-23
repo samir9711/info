@@ -10,6 +10,8 @@ use App\Http\Requests\Basic\BasicRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
+
 
 class CompanyJobService extends BasicCrudService
 {
@@ -46,6 +48,31 @@ class CompanyJobService extends BasicCrudService
             ->with($this->relations)
             ->orderBy('created_at', 'desc');
     }
+
+
+    public function allJobsPaginated(Request $request): mixed
+    {
+        $data = $this->model::withFilters()
+            ->with($this->relations)
+            ->withCount($this->countRelations)
+            ->orderBy('created_at', 'desc')
+            ->paginate(
+                $request->input('per_page', 10),
+                ['*'],
+                'page',
+                $request->input('page', 1)
+            );
+
+        return [
+            Str::plural(strtolower(class_basename($this->model))) => $this->resource::collection($data),
+            'current_page' => $data->currentPage(),
+            'next_page' => $data->nextPageUrl(),
+            'previous_page' => $data->previousPageUrl(),
+            'total_pages' => $data->lastPage(),
+            'total' => $data->total(),
+        ];
+    }
+
 
     public function create(BasicRequest $request): mixed
     {
