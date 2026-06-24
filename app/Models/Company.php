@@ -21,6 +21,7 @@ class Company extends BaseAuthModel
         'profile_video_path' => 'profile_video_path',
         'description' => 'description',
         'about' => 'about',
+        'logo_path' => 'logo_path',
     ];
 
     protected $casts = [

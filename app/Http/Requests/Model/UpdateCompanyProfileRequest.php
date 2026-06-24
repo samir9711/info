@@ -20,6 +20,7 @@ class UpdateCompanyProfileRequest extends BasicRequest
             'profile_video_path' => 'nullable|string|max:255',
             'description' => 'nullable|array',
             'about' => 'nullable|array',
+            'logo_path' => 'nullable|string|max:255',
         ];
     }
 }

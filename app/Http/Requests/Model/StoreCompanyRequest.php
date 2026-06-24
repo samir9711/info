@@ -20,7 +20,7 @@ class StoreCompanyRequest extends BasicRequest
     public function rules(): array
     {
         return [
-           
+
 
             'name' => 'sometimes|array',
             'email' => [
@@ -38,6 +38,7 @@ class StoreCompanyRequest extends BasicRequest
             'profile_video_path' => 'nullable|string|max:255',
             'description' => 'nullable|array',
             'about' => 'nullable|array',
+            'logo_path' => 'nullable|string|max:255',
         ];
     }
 
