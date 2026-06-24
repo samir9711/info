@@ -14,6 +14,7 @@ class CompanySection extends BaseModel
         'description' => 'description',
         'image_path' => 'image_path',
         'sort_order' => 'sort_order',
+        'items' => 'items',
     ];
 
     protected $casts = [
@@ -21,9 +22,10 @@ class CompanySection extends BaseModel
         'title' => 'array',
         'description' => 'array',
         'sort_order' => 'integer',
+        'items' => 'array',
     ];
 
-    
+
     public function company()
     {
         return $this->belongsTo(Company::class);

@@ -20,10 +20,11 @@ class StoreCompanySectionRequest extends BasicRequest
     {
         return [
             //'company_id' => 'required|integer|exists:companies,id',
-            'title' => 'required|array',
+            'title'       => 'required|array',
             'description' => 'nullable|array',
-            'image_path' => 'nullable|string|max:255',
-            'sort_order' => 'required|integer',
+            'image_path'  => 'nullable|string|max:255',
+            'sort_order'  => 'required|integer',
+            'items'       =>'nullable|array'
         ];
     }
 
