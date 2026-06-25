@@ -267,6 +267,14 @@ Route::prefix('user')->name('user.')->group(function () {
     });
 
 
+    Route::prefix('user')->group(function () {
+        Route::get('/all/paginated', [UserController::class, 'allPaginated']);
+        Route::get('/all',           [UserController::class, 'all']);
+        Route::post('/show',         [UserController::class, 'show']);
+
+    });
+
+
 
 
 

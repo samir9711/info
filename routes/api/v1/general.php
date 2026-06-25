@@ -11,6 +11,7 @@ use App\Http\Controllers\MinistryAccount\MinistryAccountController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -32,6 +33,14 @@ Route::post('upload/video/{folder}', [UploadController::class, 'singleVideo']);
 
 
 Route::post('login', [PublicAuthController::class, 'login']);
+
+
+Route::prefix('user')->group(function () {
+    Route::get('/all/paginated', [UserController::class, 'allPaginated']);
+    Route::get('/all',           [UserController::class, 'all']);
+    Route::post('/show',         [UserController::class, 'show']);
+
+});
 
 
 
