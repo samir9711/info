@@ -520,6 +520,7 @@ Route::prefix('company-skill')->group(function () {
 */
 
 // UserSkill PUBLIC ROUTES
+/*
 Route::prefix('user-skill')->group(function () {
     Route::get('/all/paginated', [\App\Http\Controllers\UserSkill\UserSkillController::class, 'allPaginated']);
     Route::get('/all',           [\App\Http\Controllers\UserSkill\UserSkillController::class, 'all']);
@@ -529,3 +530,26 @@ Route::prefix('user-skill')->group(function () {
     Route::post('/activate',     [\App\Http\Controllers\UserSkill\UserSkillController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\UserSkill\UserSkillController::class, 'deactivate']);
 });
+
+// CompanyJobApplication PUBLIC ROUTES
+Route::prefix('company-job-application')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController::class, 'deactivate']);
+});
+
+// CompanyJobInvitation PUBLIC ROUTES
+Route::prefix('company-job-invitation')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'deactivate']);
+});
+*/

@@ -8,6 +8,7 @@ use App\Http\Controllers\Badge\BadgeController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Company\CompanyController;
 use App\Http\Controllers\CompanyJob\CompanyJobController;
+use App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController;
 use App\Http\Controllers\ContactUs\ContactUsController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\CourseApplication\CourseApplicationController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\UserSkill\UserSkillController;
 use App\Http\Controllers\Vocabulary\VocabularyController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+
 
 
 Route::prefix('user')->name('user.')->group(function () {
@@ -271,6 +273,13 @@ Route::prefix('user')->name('user.')->group(function () {
         Route::get('/all/paginated', [UserController::class, 'allPaginated']);
         Route::get('/all',           [UserController::class, 'all']);
         Route::post('/show',         [UserController::class, 'show']);
+
+    });
+
+    Route::prefix('company-job-application')->middleware('auth:user')->group(function () {
+
+        Route::post('/create',       [CompanyJobApplicationController::class, 'store']);
+        Route::get('/my-applications',       [CompanyJobApplicationController::class, 'myApplications']);
 
     });
 

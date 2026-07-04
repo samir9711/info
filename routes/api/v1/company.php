@@ -6,6 +6,7 @@ use App\Http\Controllers\Company\CompanyController;
 use App\Http\Controllers\CompanyContactInfo\CompanyContactInfoController;
 use App\Http\Controllers\CompanyGalleryImage\CompanyGalleryImageController;
 use App\Http\Controllers\CompanyJob\CompanyJobController;
+use App\Http\Controllers\CompanyJobApplication\CompanyJobApplicationController;
 use App\Http\Controllers\CompanyRecommendedCourse\CompanyRecommendedCourseController;
 use App\Http\Controllers\CompanySection\CompanySectionController;
 use App\Http\Controllers\CompanySkill\CompanySkillController;
@@ -90,7 +91,12 @@ Route::prefix('company')->group(function () {
         Route::get('/all/paginated', [UserController::class, 'allPaginated']);
         Route::get('/all',           [UserController::class, 'all']);
         Route::post('/show',         [UserController::class, 'show']);
-      
+
+    });
+
+
+    Route::prefix('company-job-application')->middleware('auth:company')->group(function () {
+        Route::get('/my-applications',       [CompanyJobApplicationController::class, 'companyApplications']);
     });
 });
 
