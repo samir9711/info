@@ -10,6 +10,7 @@ use App\Models\CompanyJob;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\Basic\BasicRequest;
 use Illuminate\Http\Request;
+use App\Http\Requests\Model\ChangeCompanyJobApplicationStatusRequest;
 
 
 class CompanyJobApplicationService extends BasicCrudService
@@ -119,6 +120,9 @@ class CompanyJobApplicationService extends BasicCrudService
                 'companyJob',
             ])
             ->where('company_id', $company->id)
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('status', $request->status);
+            })
             ->latest()
             ->paginate(
                 $request->input('per_page', 10),
@@ -135,5 +139,46 @@ class CompanyJobApplicationService extends BasicCrudService
             'total_pages' => $applications->lastPage(),
             'total' => $applications->total(),
         ];
+    }
+
+    public function changeStatus(ChangeCompanyJobApplicationStatusRequest $request): mixed
+    {
+        $company = auth('company')->user(); // أو auth()->user()
+
+        $application = CompanyJobApplication::findOrFail($request->id);
+
+        if ($application->company_id != $company->id) {
+
+            throw ValidationException::withMessages([
+                'id' => 'This application does not belong to your company.'
+            ]);
+
+        }
+
+        // اختياري: منع تعديل الطلب بعد انتهاءه
+        if (in_array($application->status, ['accepted', 'rejected'])) {
+
+            throw ValidationException::withMessages([
+                'status' => 'This application has already been finalized.'
+            ]);
+
+        }
+
+        $application->update([
+
+            'status' => $request->status,
+
+            'company_note' => $request->company_note,
+
+            'reviewed_at' => now(),
+
+        ]);
+
+        return CompanyJobApplicationResource::make(
+            $application->fresh([
+                'user',
+                'companyJob',
+            ])
+        );
     }
 }

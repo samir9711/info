@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CompanyJobApplication;
 use App\Facades\Services\CompanyJobApplication\CompanyJobApplicationFacade;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\FatherCrudController;
+use App\Http\Requests\Model\ChangeCompanyJobApplicationStatusRequest;
 use App\Http\Requests\Model\StoreCompanyJobApplicationRequest;
 use Illuminate\Http\Request;
 
@@ -38,6 +39,23 @@ class CompanyJobApplicationController extends FatherCrudController
             return $this->apiResponse(
                 $this->service::companyApplications($request)
             );
+
+        } catch (\Exception $e) {
+
+            return $this->handleException($e);
+
+        }
+    }
+
+    public function changeStatus()
+    {
+        try {
+
+            $request = app(ChangeCompanyJobApplicationStatusRequest::class);
+
+            return $this->apiResponse([
+                'company_job_application' => $this->service::changeStatus($request)
+            ]);
 
         } catch (\Exception $e) {
 

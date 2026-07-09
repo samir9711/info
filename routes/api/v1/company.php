@@ -97,6 +97,7 @@ Route::prefix('company')->group(function () {
 
     Route::prefix('company-job-application')->middleware('auth:company')->group(function () {
         Route::get('/my-applications',       [CompanyJobApplicationController::class, 'companyApplications']);
+        Route::post('/change-status',       [CompanyJobApplicationController::class, 'changeStatus']);
     });
 });
 
