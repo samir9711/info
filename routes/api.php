@@ -577,3 +577,25 @@ Route::prefix('single-lesson')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'deactivate']);
 });
 */
+
+// Event PUBLIC ROUTES
+Route::prefix('event')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\Event\EventController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\Event\EventController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\Event\EventController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\Event\EventController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\Event\EventController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\Event\EventController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\Event\EventController::class, 'deactivate']);
+});
+
+// EventVideo PUBLIC ROUTES
+Route::prefix('event-video')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\EventVideo\EventVideoController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\EventVideo\EventVideoController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\EventVideo\EventVideoController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\EventVideo\EventVideoController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\EventVideo\EventVideoController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\EventVideo\EventVideoController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\EventVideo\EventVideoController::class, 'deactivate']);
+});

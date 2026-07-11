@@ -12,6 +12,8 @@ use App\Http\Controllers\CourseCondition\CourseConditionController;
 use App\Http\Controllers\CourseFinancialTransaction\CourseFinancialTransactionController;
 use App\Http\Controllers\CourseInstructor\CourseInstructorController;
 use App\Http\Controllers\CourseQuiz\CourseQuizController;
+use App\Http\Controllers\Event\EventController;
+use App\Http\Controllers\EventVideo\EventVideoController;
 use App\Http\Controllers\Faq\FaqController;
 use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Lesson\LessonController;
@@ -271,6 +273,22 @@ Route::prefix('admin')->group(function () {
         Route::delete('/destroy',    [SingleLessonController::class, 'destroy']);
     });
 
+    Route::prefix('event')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [EventController::class, 'allPaginated']);
+        Route::get('/all',           [EventController::class, 'all']);
+        Route::post('/show',         [EventController::class, 'show']);
+        Route::post('/create',       [EventController::class, 'store']);
+        Route::post('/update',       [EventController::class, 'update']);
+        Route::delete('/destroy',    [EventController::class, 'destroy']);
+    });
+    Route::prefix('event-video')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [EventVideoController::class, 'allPaginated']);
+        Route::get('/all',           [EventVideoController::class, 'all']);
+        Route::post('/show',         [EventVideoController::class, 'show']);
+        Route::post('/create',       [EventVideoController::class, 'store']);
+        Route::post('/update',       [EventVideoController::class, 'update']);
+        Route::delete('/destroy',    [EventVideoController::class, 'destroy']);
+    });
 
 });
 

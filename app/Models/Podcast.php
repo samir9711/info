@@ -31,6 +31,26 @@ class Podcast extends BaseModel
         'downloads' => 'integer',
     ];
 
+    protected array $fileAttributes = [
+        'cover' => 'single',
+        'video' => 'single',
+    ];
+
+    protected $search = ['title', 'description'];
+
+    protected array $filterable = [
+
+        'instructor_id'=>'int',
+        'category_id'=>'int'
+
+
+    ];
+
+    protected array $dynamicFilterColumns = [
+        'instructor_id',
+        'category_id'
+    ];
+
 
     public function instructor()
     {

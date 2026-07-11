@@ -6,55 +6,49 @@ use App\Models\BaseModel;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SingleLesson extends BaseModel
+class EventVideo extends BaseModel
 {
     protected $fillable = [
+        'event_id' => 'event_id',
         'title' => 'title',
         'description' => 'description',
         'thumbnail' => 'thumbnail',
         'video' => 'video',
         'duration' => 'duration',
-        'instructor_id' => 'instructor_id',
-        'category_id' => 'category_id',
         'views' => 'views',
     ];
 
     protected $casts = [
+        'event_id' => 'integer',
         'title' => 'array',
         'description' => 'array',
         'duration' => 'integer',
-        'instructor_id' => 'integer',
-        'category_id' => 'integer',
         'views' => 'integer',
     ];
 
 
     protected array $filterable = [
 
-        'category_id'=>'int',
+        'event_id'=>'int',
 
-        'instructor_id'=>'int'
 
     ];
 
     protected array $dynamicFilterColumns = [
 
-        'category_id'
+        'event_id'
     ];
+
+    protected $search = ['title', 'description'];
 
     protected array $fileAttributes = [
        'thumbnail' => 'single',
         'video' => 'single',
     ];
 
-    public function instructor()
+    public function event()
     {
-        return $this->belongsTo(Instructor::class);
-    }
-
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Event::class);
     }
 
     //
