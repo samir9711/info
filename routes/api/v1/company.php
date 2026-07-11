@@ -34,7 +34,7 @@ Route::prefix('company')->group(function () {
         Route::post('/show',         [CompanySectionController::class, 'show']);
         Route::post('/create',       [CompanySectionController::class, 'store']);
         Route::post('/update',       [CompanySectionController::class, 'update']);
-        Route::delete('/delete',       [CompanySectionController::class, 'destroy']);
+        Route::delete('/delete',     [CompanySectionController::class, 'destroy']);
     });
 
 
@@ -83,8 +83,8 @@ Route::prefix('company')->group(function () {
     });
 
     Route::middleware('auth:company')->group(function () {
-        Route::post('/profile', [CompanyController::class, 'updateProfile']);
-        Route::get('/my-profile', [CompanyController::class, 'myProfile']);
+        Route::post('/profile',      [CompanyController::class, 'updateProfile']);
+        Route::get('/my-profile',    [CompanyController::class, 'myProfile']);
     });
 
      Route::prefix('user')->middleware('auth:company')->group(function () {
@@ -96,8 +96,8 @@ Route::prefix('company')->group(function () {
 
 
     Route::prefix('company-job-application')->middleware('auth:company')->group(function () {
-        Route::get('/my-applications',       [CompanyJobApplicationController::class, 'companyApplications']);
-        Route::post('/change-status',       [CompanyJobApplicationController::class, 'changeStatus']);
+        Route::get('/my-applications',[CompanyJobApplicationController::class, 'companyApplications']);
+        Route::post('/change-status', [CompanyJobApplicationController::class, 'changeStatus']);
     });
 });
 

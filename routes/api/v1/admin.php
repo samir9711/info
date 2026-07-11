@@ -17,9 +17,11 @@ use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Lesson\LessonController;
 use App\Http\Controllers\LessonComment\LessonCommentController;
 use App\Http\Controllers\LessonVideoController;
+use App\Http\Controllers\Podcast\PodcastController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
 use App\Http\Controllers\Setting\SettingController;
+use App\Http\Controllers\SingleLesson\SingleLessonController;
 use App\Http\Controllers\Skill\SkillController;
 use App\Http\Controllers\Slide\SlideController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
@@ -248,6 +250,27 @@ Route::prefix('admin')->group(function () {
         Route::post('/update',       [SkillController::class, 'update']);
         Route::delete('/destroy',    [SkillController::class, 'destroy']);
     });
+
+
+    Route::prefix('podcast')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [PodcastController::class, 'allPaginated']);
+        Route::get('/all',           [PodcastController::class, 'all']);
+        Route::post('/show',         [PodcastController::class, 'show']);
+        Route::post('/create',       [PodcastController::class, 'store']);
+        Route::post('/update',       [PodcastController::class, 'update']);
+        Route::delete('/destroy',    [PodcastController::class, 'destroy']);
+    });
+
+
+    Route::prefix('single-lesson')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [SingleLessonController::class, 'allPaginated']);
+        Route::get('/all',           [SingleLessonController::class, 'all']);
+        Route::post('/show',         [SingleLessonController::class, 'show']);
+        Route::post('/create',       [SingleLessonController::class, 'store']);
+        Route::post('/update',       [SingleLessonController::class, 'update']);
+        Route::delete('/destroy',    [SingleLessonController::class, 'destroy']);
+    });
+
 
 });
 

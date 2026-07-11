@@ -553,3 +553,27 @@ Route::prefix('company-job-invitation')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\CompanyJobInvitation\CompanyJobInvitationController::class, 'deactivate']);
 });
 */
+
+// Podcast PUBLIC ROUTES
+/*
+Route::prefix('podcast')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\Podcast\PodcastController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\Podcast\PodcastController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\Podcast\PodcastController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\Podcast\PodcastController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\Podcast\PodcastController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\Podcast\PodcastController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\Podcast\PodcastController::class, 'deactivate']);
+});
+
+// SingleLesson PUBLIC ROUTES
+Route::prefix('single-lesson')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'deactivate']);
+});
+*/
