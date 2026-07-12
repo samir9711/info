@@ -67,6 +67,7 @@ use Illuminate\Support\Facades\Route;
         Route::post('/show',         [EventController::class, 'show']);
 
     });
+    
     Route::prefix('event-video')->group(function () {
         Route::get('/all/paginated', [EventVideoController::class, 'allPaginated']);
         Route::get('/all',           [EventVideoController::class, 'all']);
