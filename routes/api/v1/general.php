@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\UnifiedAuthController;
 use App\Http\Controllers\Currency\CurrencyController;
 use App\Http\Controllers\Directorate\DirectorateController;
 use App\Http\Controllers\Establishment\EstablishmentController;
+use App\Http\Controllers\Event\EventController;
+use App\Http\Controllers\EventVideo\EventVideoController;
 use App\Http\Controllers\Ministry\MinistryController;
 use App\Http\Controllers\MinistryAccount\MinistryAccountController;
 use App\Http\Controllers\Podcast\PodcastController;
@@ -56,6 +58,19 @@ use Illuminate\Support\Facades\Route;
         Route::get('/all/paginated', [SingleLessonController::class, 'allPaginated']);
         Route::get('/all',           [SingleLessonController::class, 'all']);
         Route::post('/show',         [SingleLessonController::class, 'show']);
+
+    });
+
+    Route::prefix('event')->group(function () {
+        Route::get('/all/paginated', [EventController::class, 'allPaginated']);
+        Route::get('/all',           [EventController::class, 'all']);
+        Route::post('/show',         [EventController::class, 'show']);
+
+    });
+    Route::prefix('event-video')->group(function () {
+        Route::get('/all/paginated', [EventVideoController::class, 'allPaginated']);
+        Route::get('/all',           [EventVideoController::class, 'all']);
+        Route::post('/show',         [EventVideoController::class, 'show']);
 
     });
 
