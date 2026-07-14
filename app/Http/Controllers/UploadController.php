@@ -21,7 +21,7 @@ class UploadController extends Controller
                 'file' => [
                     'required',
                     'file',
-                    'max:51200',
+
                     function ($attribute, $value, $fail) {
 
                         $allowedMime = [
@@ -38,7 +38,7 @@ class UploadController extends Controller
             $messages = [
                 'file.required' => 'يرجى اختيار ملف للرفع.',
                 'file.file'     => 'الملف المرفوع غير صالح.',
-                'file.max'      => 'حجم الملف يجب ألا يتجاوز 50 ميجابايت.',
+                //'file.max'      => 'حجم الملف يجب ألا يتجاوز 50 ميجابايت.',
             ];
 
             $request->validate($rules, $messages);
@@ -149,7 +149,7 @@ class UploadController extends Controller
                 'file' => [
                     'required',
                     'file',
-                    'max:512000',
+
                     function ($attribute, $value, $fail) {
                         $allowedMime = [
                             'video/mp4',
@@ -170,8 +170,8 @@ class UploadController extends Controller
 
             $messages = [
                 'file.required' => 'يرجى اختيار ملف فيديو للرفع.',
-                'file.file'     => 'الملف المرفوع غير صالح.',
-                'file.max'      => 'حجم الملف يجب ألا يتجاوز 500 ميجابايت.',
+                'file.file'     => 'الملف المرفوع غير صالح.'
+
             ];
 
             $request->validate($rules, $messages);
