@@ -27,6 +27,9 @@ use Illuminate\Support\Facades\Route;
 
     Route::post('upload/video/{folder}', [UploadController::class, 'singleVideo']);
 
+    Route::post('lessons/{lesson}/video',[UploadController::class, 'uploadVideo'])
+        ->whereNumber('lesson')
+        ->name('lessons.video.upload');
 
     Route::prefix('currency')->group(function () {
         Route::get('/all/paginated', [CurrencyController::class, 'allPaginated']);
@@ -67,7 +70,7 @@ use Illuminate\Support\Facades\Route;
         Route::post('/show',         [EventController::class, 'show']);
 
     });
-    
+
     Route::prefix('event-video')->group(function () {
         Route::get('/all/paginated', [EventVideoController::class, 'allPaginated']);
         Route::get('/all',           [EventVideoController::class, 'all']);
