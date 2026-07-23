@@ -262,4 +262,24 @@ class UploadController extends Controller
             ],
         ], 202);
     }
+
+
+    public function videoStatus(Lesson $lesson)
+    {
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'lesson_id' => $lesson->id,
+                'hls_status' => $lesson->hls_status,
+                'hls_path' => $lesson->hls_path,
+                'hls_processed_at' => $lesson->hls_processed_at,
+
+                /*
+                * هذا مناسب للوحة الإدارة فقط.
+                * لا ترسل hls_error للطالب.
+                */
+                'hls_error' => $lesson->hls_error,
+            ],
+        ]);
+    }
 }

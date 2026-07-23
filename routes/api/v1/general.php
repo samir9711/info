@@ -31,6 +31,10 @@ use Illuminate\Support\Facades\Route;
         ->whereNumber('lesson')
         ->name('lessons.video.upload');
 
+    Route::get('lessons/{lesson}/video/status',[UploadController::class, 'videoStatus'])
+    ->whereNumber('lesson')
+    ->name('lessons.video.status');
+
     Route::prefix('currency')->group(function () {
         Route::get('/all/paginated', [CurrencyController::class, 'allPaginated']);
         Route::get('/all',           [CurrencyController::class, 'all']);
