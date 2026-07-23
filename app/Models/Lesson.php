@@ -19,6 +19,14 @@ class Lesson extends BaseModel
         'sources' => 'sources',
         'image' => 'image',
         'what_will_learn' => 'what_will_learn',
+        'hls_status' => 'hls_status',
+        'hls_error' => 'hls_error',
+        'hls_processed_at' => 'hls_processed_at',
+        'hls_disk' => 'hls_disk',
+        'hls_path' => 'hls_path',
+        'video_source_disk' => 'video_source_disk',
+        'video_source_path' => 'video_source_path',
+
     ];
 
     protected $casts = [
