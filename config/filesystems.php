@@ -65,6 +65,17 @@ return [
             'root' => storage_path('app/private'),
             'visibility' => 'private',
         ],
+        'lesson_source' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/lesson-source'),
+            'throw' => true,
+        ],
+
+        'lesson_hls' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/lesson-hls'),
+            'throw' => true,
+        ],
 
     ],
 

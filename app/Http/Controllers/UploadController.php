@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Jobs\ConvertLessonVideoToHls;
 
 class UploadController extends Controller
 {
@@ -141,59 +142,65 @@ class UploadController extends Controller
         }
     }
 
-    public function singleVideo(Request $request, string $folder)
+    public function singleVideo(Request $request,Lesson $lesson)
     {
-        try {
+        $request->validate([
+            'video' => [
+                'required',
+                'file',
+                'mimetypes:video/mp4,video/quicktime,video/x-matroska',
+            ],
+        ]);
 
-            $rules = [
-                'file' => [
-                    'required',
-                    'file',
-
-                    function ($attribute, $value, $fail) {
-                        $allowedMime = [
-                            'video/mp4',
-                            'video/quicktime',
-                            'video/x-msvideo',
-                            'video/x-matroska',
-                            'video/webm',
-                            'video/ogg'
-                        ];
-
-                        $detected = $value->getMimeType();
-                        if (! in_array($detected, $allowedMime, true)) {
-                            $fail('الملف يجب أن يكون فيديو بصيغة مدعومة (MP4, MOV, AVI, MKV, WEBM, OGG).');
-                        }
-                    },
-                ],
-            ];
-
-            $messages = [
-                'file.required' => 'يرجى اختيار ملف فيديو للرفع.',
-                'file.file'     => 'الملف المرفوع غير صالح.'
-
-            ];
-
-            $request->validate($rules, $messages);
-
-            if (! preg_match('/^[A-Za-z0-9_-]+$/', $folder)) {
-                return $this->requiredField('اسم المجلد غير صالح. مسموح فقط الحروف والأرقام والشرطة (-) والشرطة السفلية (_).');
-            }
-
-            $disk = 'private';
-            $ext = $request->file('file')->getClientOriginalExtension();
-            $filename = Str::uuid() . ($ext ? ('.' . $ext) : '');
-            $path = $request->file('file')->storeAs($folder, $filename, $disk);
-
-
-            return $this->apiResponse(
-                ['path' => $path],
-                true,
-                null,
-                201
+        /*
+        * حذف المصدر القديم إن وجد.
+        */
+        if (
+            $lesson->video_source_path &&
+            $lesson->video_source_disk
+        ) {
+            Storage::disk(
+                $lesson->video_source_disk
+            )->delete(
+                $lesson->video_source_path
             );
-        } catch (\Exception $e) {
-            return $this->handleException($e);
         }
+
+        $sourceDisk = config(
+            'lesson_video.source_disk'
+        );
+
+        $sourcePath = $request
+            ->file('video')
+            ->store(
+                "lessons/{$lesson->id}",
+                $sourceDisk
+            );
+
+        $lesson->forceFill([
+            'video_source_disk' => $sourceDisk,
+            'video_source_path' => $sourcePath,
+
+            'hls_disk' => config(
+                'lesson_video.hls_disk'
+            ),
+
+            'hls_status' => 'pending',
+            'hls_error' => null,
+            'hls_processed_at' => null,
+        ])->save();
+
+        ConvertLessonVideoToHls::dispatch(
+            $lesson->id
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'تم رفع الفيديو وبدأت عملية المعالجة.',
+            'data' => [
+                'lesson_id' => $lesson->id,
+                'hls_status' => 'pending',
+            ],
+        ], 202);
     }
 }

@@ -156,16 +156,69 @@ Route::prefix('user')->name('user.')->group(function () {
 
 
 
-    Route::middleware(['auth:user'])->group(function () {
-        Route::get('lessons/{lesson}/video', [LessonVideoController::class, 'stream'])
-            ->name('api.lessons.video');
-        Route::post('lessons/{lesson}/video/refresh', [LessonVideoController::class, 'refresh']);
+    Route::middleware('auth:user')
+    ->group(function () {
+        Route::post(
+            'lessons/{lesson}/video/session',
+            [LessonVideoController::class, 'stream']
+        )->name('lessons.video.session');
 
-         Route::get('lessons/{lesson}/video/file', [LessonVideoController::class, 'getVideoFile'])
-        ->middleware('signed')
-        ->name('api.lessons.video.file');
+        Route::post(
+            'lessons/{lesson}/video/session/refresh',
+            [LessonVideoController::class, 'refresh']
+        )->name('lessons.video.refresh');
+
+        Route::get(
+            'lessons/{lesson}/video/hls/{psid}/master.m3u8',
+            [LessonVideoController::class, 'master']
+        )
+            ->where('psid', '[A-Za-z0-9]{64}')
+            ->name('lessons.video.hls.master');
+
+        Route::get(
+            'lessons/{lesson}/video/hls/{psid}/{quality}/index.m3u8',
+            [LessonVideoController::class, 'variant']
+        )
+            ->where('psid', '[A-Za-z0-9]{64}')
+            ->where('quality', '[A-Za-z0-9_-]+')
+            ->name('lessons.video.hls.variant');
+
+        Route::get(
+            'lessons/{lesson}/video/hls/{psid}/{quality}/{segment}/ticket',
+            [LessonVideoController::class, 'ticket']
+        )
+            ->where('psid', '[A-Za-z0-9]{64}')
+            ->where('quality', '[A-Za-z0-9_-]+')
+            ->where('segment', 'seg_[0-9]{5}\.ts')
+            ->middleware('throttle:lesson-video-ticket')
+            ->name('lessons.video.hls.ticket');
     });
 
+    /*
+    |--------------------------------------------------------------------------
+    | Signed TS segment
+    |--------------------------------------------------------------------------
+    |
+    | يجب أن يبقى خارج auth:user لأن حمايته تعتمد على:
+    | - signed URL
+    | - صلاحية قصيرة
+    | - playback session
+    | - user-agent binding
+    |
+    */
+
+    Route::get(
+        'lessons/{lesson}/video/hls/{psid}/{quality}/{segment}',
+        [LessonVideoController::class, 'segment']
+    )
+        ->where('psid', '[A-Za-z0-9]{64}')
+        ->where('quality', '[A-Za-z0-9_-]+')
+        ->where('segment', 'seg_[0-9]{5}\.ts')
+        ->middleware([
+            'signed',
+            'throttle:lesson-video-segment',
+        ])
+        ->name('lessons.video.hls.segment');
 
 
 

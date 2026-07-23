@@ -7,6 +7,14 @@ use App\Services\Functional\UserAuthService;
 use App\Services\Functional\CompanyAuthService;
 use Illuminate\Support\ServiceProvider;
 use App\Exceptions\Handler;
+use App\Models\Lesson;
+use App\Policies\LessonPolicy;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -149,6 +157,30 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        RateLimiter::for(
+            'lesson-video-ticket',
+            function (Request $request) {
+                $user = $request->user('user');
+
+                return Limit::perMinute(180)->by(
+                    'ticket:' .
+                    ($user?->id ?? 'guest') .
+                    ':' .
+                    $request->ip()
+                );
+            }
+        );
+
+        RateLimiter::for(
+            'lesson-video-segment',
+            function (Request $request) {
+                return Limit::perMinute(240)->by(
+                    'segment:' .
+                    $request->route('psid') .
+                    ':' .
+                    $request->ip()
+                );
+            }
+        );
     }
 }
