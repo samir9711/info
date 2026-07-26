@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LessonVideo\RefreshLessonVideoRequest;
 use App\Http\Requests\LessonVideo\StreamLessonVideoRequest;
 use App\Models\Lesson;
-use App\Models\User;
 use App\Services\LessonVideo\LessonVideoService;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,14 +20,23 @@ class LessonVideoController extends Controller
     ) {
     }
 
+    /**
+     * إنشاء جلسة تشغيل جديدة.
+     *
+     * يدعم:
+     * - User
+     * - Admin
+     * - Instructor
+     */
     public function stream(
         StreamLessonVideoRequest $request,
         Lesson $lesson
     ): JsonResponse {
-        /** @var User $user */
-        $user = $request->user('user');
+        $actor = $this->authenticatedActor(
+            $request
+        );
 
-        Gate::forUser($user)->authorize(
+        Gate::forUser($actor)->authorize(
             'streamVideo',
             $lesson
         );
@@ -34,6 +44,7 @@ class LessonVideoController extends Controller
         if ($lesson->hls_status !== 'ready') {
             return response()->json([
                 'status' => false,
+
                 'message' => match (
                     $lesson->hls_status
                 ) {
@@ -51,57 +62,69 @@ class LessonVideoController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $this->service->createSession(
-                $lesson,
-                $user,
-                $request
-            ),
+
+            'data' => $this->service
+                ->createSession(
+                    $lesson,
+                    $actor,
+                    $request
+                ),
         ]);
     }
 
+    /**
+     * تجديد جلسة التشغيل الحالية.
+     */
     public function refresh(
         RefreshLessonVideoRequest $request,
         Lesson $lesson
     ): JsonResponse {
-        /** @var User $user */
-        $user = $request->user('user');
+        $actor = $this->authenticatedActor(
+            $request
+        );
 
-        Gate::forUser($user)->authorize(
+        Gate::forUser($actor)->authorize(
             'streamVideo',
             $lesson
         );
 
         return response()->json([
             'status' => true,
-            'data' => $this->service->refreshSession(
-                $request->validated(
-                    'playback_session_id'
+
+            'data' => $this->service
+                ->refreshSession(
+                    $request->validated(
+                        'playback_session_id'
+                    ),
+                    $lesson,
+                    $actor,
+                    $request
                 ),
-                $lesson,
-                $user,
-                $request
-            ),
         ]);
     }
 
+    /**
+     * إرجاع Master Playlist.
+     */
     public function master(
         Request $request,
         Lesson $lesson,
         string $psid
     ): Response {
-        /** @var User $user */
-        $user = $request->user('user');
+        $actor = $this->authenticatedActor(
+            $request
+        );
 
-        Gate::forUser($user)->authorize(
+        Gate::forUser($actor)->authorize(
             'streamVideo',
             $lesson
         );
 
-        $manifest =
-            $this->service->masterManifest(
+        $manifest = $this->service
+            ->masterManifest(
                 $psid,
                 $lesson,
-                $user,
+                $actor,
                 $request
             );
 
@@ -110,26 +133,30 @@ class LessonVideoController extends Controller
         );
     }
 
+    /**
+     * إرجاع Playlist الخاصة بجودة معينة.
+     */
     public function variant(
         Request $request,
         Lesson $lesson,
         string $psid,
         string $quality
     ): Response {
-        /** @var User $user */
-        $user = $request->user('user');
+        $actor = $this->authenticatedActor(
+            $request
+        );
 
-        Gate::forUser($user)->authorize(
+        Gate::forUser($actor)->authorize(
             'streamVideo',
             $lesson
         );
 
-        $manifest =
-            $this->service->variantManifest(
+        $manifest = $this->service
+            ->variantManifest(
                 $psid,
                 $quality,
                 $lesson,
-                $user,
+                $actor,
                 $request
             );
 
@@ -138,6 +165,9 @@ class LessonVideoController extends Controller
         );
     }
 
+    /**
+     * إصدار رابط Signed مؤقت لمقطع TS.
+     */
     public function ticket(
         Request $request,
         Lesson $lesson,
@@ -145,20 +175,26 @@ class LessonVideoController extends Controller
         string $quality,
         string $segment
     ): JsonResponse {
-        /** @var User $user */
-        $user = $request->user('user');
+        $actor = $this->authenticatedActor(
+            $request
+        );
 
         /*
-         * لا نكرر استعلام CourseApplication هنا؛
-         * الجلسة أُنشئت بعد Policy check.
+         * نتحقق من Policy أيضًا حتى يتم منع الوصول
+         * إذا تم سحب صلاحية الحساب أثناء المشاهدة.
          */
-        $ticket =
-            $this->service->createSegmentTicket(
+        Gate::forUser($actor)->authorize(
+            'streamVideo',
+            $lesson
+        );
+
+        $ticket = $this->service
+            ->createSegmentTicket(
                 $psid,
                 $quality,
                 $segment,
                 $lesson,
-                $user,
+                $actor,
                 $request
             );
 
@@ -168,10 +204,20 @@ class LessonVideoController extends Controller
         ])->withHeaders([
             'Cache-Control' =>
                 'no-store, no-cache, must-revalidate',
+
             'Pragma' => 'no-cache',
         ]);
     }
 
+    /**
+     * إرسال ملف TS عن طريق Nginx.
+     *
+     * هذا الراوت لا يحتاج Bearer Token.
+     * الحماية تتم عن طريق:
+     * - Signed URL
+     * - صلاحية قصيرة
+     * - Playback Session
+     */
     public function segment(
         Request $request,
         Lesson $lesson,
@@ -179,12 +225,8 @@ class LessonVideoController extends Controller
         string $quality,
         string $segment
     ): Response {
-        /*
-         * Middleware signed يتحقق من انتهاء الرابط
-         * قبل الوصول إلى هنا.
-         */
-        $internalUri =
-            $this->service->getInternalSegmentUri(
+        $internalUri = $this->service
+            ->getInternalSegmentUri(
                 $psid,
                 $quality,
                 $segment,
@@ -192,10 +234,6 @@ class LessonVideoController extends Controller
                 $request
             );
 
-        /*
-         * Laravel لا يقرأ ملف TS.
-         * Nginx يرسله مباشرة.
-         */
         return response('', 200, [
             'Content-Type' => 'video/mp2t',
 
@@ -213,6 +251,34 @@ class LessonVideoController extends Controller
         ]);
     }
 
+    /**
+     * جلب الحساب المسجل من الـGuard الذي نجح.
+     *
+     * Middleware:
+     * auth:user,admin,instructor
+     *
+     * يقوم Laravel بتعيين الـGuard الناجح كـGuard افتراضي
+     * ولذلك يمكن استخدام $request->user().
+     *
+     * @throws AuthenticationException
+     */
+    private function authenticatedActor(
+        Request $request
+    ): Authenticatable {
+        $actor = $request->user();
+
+        if (!$actor instanceof Authenticatable) {
+            throw new AuthenticationException(
+                'Unauthenticated.'
+            );
+        }
+
+        return $actor;
+    }
+
+    /**
+     * إرجاع استجابة Playlist.
+     */
     private function manifestResponse(
         string $content
     ): Response {

@@ -8,7 +8,8 @@ class StreamLessonVideoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user('user') !== null;
+
+        return true;
     }
 
     public function rules(): array

@@ -6,6 +6,8 @@ use App\Models\BaseModel;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Instructor extends BaseAuthModel
 {
@@ -50,6 +52,14 @@ class Instructor extends BaseAuthModel
     public function averageRating()
     {
         return $this->ratings()->avg('rating');
+    }
+
+    public function courseInstructorRecords(): HasMany
+    {
+        return $this->hasMany(
+            CourseInstructor::class,
+            'instructor_id'
+        );
     }
 
 

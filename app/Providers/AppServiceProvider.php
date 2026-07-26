@@ -160,11 +160,17 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for(
             'lesson-video-ticket',
             function (Request $request) {
-                $user = $request->user('user');
+                $actor = $request->user();
+
+                $actorKey = $actor
+                    ? get_class($actor) .
+                        ':' .
+                        $actor->getAuthIdentifier()
+                    : 'guest';
 
                 return Limit::perMinute(180)->by(
-                    'ticket:' .
-                    ($user?->id ?? 'guest') .
+                    'video-ticket:' .
+                    hash('sha256', $actorKey) .
                     ':' .
                     $request->ip()
                 );
@@ -175,8 +181,8 @@ class AppServiceProvider extends ServiceProvider
             'lesson-video-segment',
             function (Request $request) {
                 return Limit::perMinute(240)->by(
-                    'segment:' .
-                    $request->route('psid') .
+                    'video-segment:' .
+                    (string) $request->route('psid') .
                     ':' .
                     $request->ip()
                 );

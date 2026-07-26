@@ -3,8 +3,8 @@
 namespace App\Services\LessonVideo;
 
 use App\Models\Lesson;
-use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Routing\UrlGenerator;
@@ -22,18 +22,17 @@ class LessonVideoService
     }
 
     /**
+     * إنشاء جلسة تشغيل جديدة.
+     *
      * @return array<string, mixed>
      */
     public function createSession(
         Lesson $lesson,
-        User $user,
+        Authenticatable $actor,
         Request $request
     ): array {
         $this->assertVideoReady($lesson);
 
-        /*
-         * أقوى من UUID للاستخدام كـsession secret.
-         */
         $playbackSessionId = Str::random(64);
 
         $absoluteExpiresAt = now()->addMinutes(
@@ -43,8 +42,23 @@ class LessonVideoService
             )
         );
 
+        [
+            $actorType,
+            $actorId,
+        ] = $this->actorIdentity($actor);
+
         $session = [
-            'user_id' => (int) $user->id,
+            /*
+             * نخزن نوع الحساب والرقم معًا.
+             *
+             * هذا يمنع تداخل:
+             * User ID 5
+             * Admin ID 5
+             * Instructor ID 5
+             */
+            'actor_type' => $actorType,
+            'actor_id' => $actorId,
+
             'lesson_id' => (int) $lesson->id,
 
             'created_at' => now()->timestamp,
@@ -52,6 +66,9 @@ class LessonVideoService
             'absolute_expires_at' =>
                 $absoluteExpiresAt->timestamp,
 
+            /*
+             * تبقى القيم محفوظة حتى عند تعطيل التحقق منها.
+             */
             'user_agent_hash' =>
                 $this->userAgentHash($request),
 
@@ -65,14 +82,20 @@ class LessonVideoService
                 true
             )
         ) {
-            $activeKey = $this->activeSessionCacheKey(
-                $user->id,
-                $lesson->id
-            );
+            $activeKey =
+                $this->activeSessionCacheKey(
+                    $actorType,
+                    $actorId,
+                    $lesson->id
+                );
 
             $oldPlaybackSessionId =
                 $this->cache->get($activeKey);
 
+            /*
+             * إنشاء جلسة جديدة يبطل الجلسة القديمة
+             * لنفس الحساب ونفس الدرس.
+             */
             if (is_string($oldPlaybackSessionId)) {
                 $this->cache->forget(
                     $this->playbackCacheKey(
@@ -112,24 +135,29 @@ class LessonVideoService
     }
 
     /**
+     * تجديد Idle Timeout للجلسة الحالية.
+     *
+     * لا يتم تمديد Absolute Expiration.
+     *
      * @return array<string, mixed>
      */
     public function refreshSession(
         string $playbackSessionId,
         Lesson $lesson,
-        User $user,
+        Authenticatable $actor,
         Request $request
     ): array {
-        $session = $this->validatePlaybackSession(
-            $playbackSessionId,
-            $lesson,
-            $user,
-            $request
-        );
+        $session =
+            $this->validatePlaybackSession(
+                $playbackSessionId,
+                $lesson,
+                $actor,
+                $request
+            );
 
         return [
             'manifest_url' => $this->url->route(
-                'user.api.lessons.video.hls.master',
+                'user.lessons.video.hls.master',
                 [
                     'lesson' => $lesson->id,
                     'psid' => $playbackSessionId,
@@ -148,10 +176,14 @@ class LessonVideoService
         ];
     }
 
+    /**
+     * إرجاع Master Playlist بعد استبدال مسارات
+     * الجودات بروابط Laravel المحمية.
+     */
     public function masterManifest(
         string $playbackSessionId,
         Lesson $lesson,
-        User $user,
+        Authenticatable $actor,
         Request $request
     ): string {
         $this->assertVideoReady($lesson);
@@ -159,7 +191,7 @@ class LessonVideoService
         $this->validatePlaybackSession(
             $playbackSessionId,
             $lesson,
-            $user,
+            $actor,
             $request
         );
 
@@ -168,9 +200,9 @@ class LessonVideoService
                 ?: config('lesson_video.hls_disk')
         );
 
-        $masterPath = $this->videoBasePath(
-            $lesson
-        ) . '/master.m3u8';
+        $masterPath =
+            $this->videoBasePath($lesson) .
+            '/master.m3u8';
 
         if (!$disk->exists($masterPath)) {
             throw new RuntimeException(
@@ -178,7 +210,9 @@ class LessonVideoService
             );
         }
 
-        $content = $disk->get($masterPath);
+        $content = $disk->get(
+            $masterPath
+        );
 
         return $this->rewriteMasterManifest(
             $content,
@@ -187,11 +221,14 @@ class LessonVideoService
         );
     }
 
+    /**
+     * إرجاع Playlist الخاصة بجودة معينة.
+     */
     public function variantManifest(
         string $playbackSessionId,
         string $quality,
         Lesson $lesson,
-        User $user,
+        Authenticatable $actor,
         Request $request
     ): string {
         $this->assertVideoReady($lesson);
@@ -199,20 +236,22 @@ class LessonVideoService
         $this->validatePlaybackSession(
             $playbackSessionId,
             $lesson,
-            $user,
+            $actor,
             $request
         );
 
-        $this->validateQuality($quality);
+        $this->validateQuality(
+            $quality
+        );
 
         $disk = Storage::disk(
             $lesson->hls_disk
                 ?: config('lesson_video.hls_disk')
         );
 
-        $variantPath = $this->videoBasePath(
-            $lesson
-        ) . "/{$quality}/index.m3u8";
+        $variantPath =
+            $this->videoBasePath($lesson) .
+            "/{$quality}/index.m3u8";
 
         if (!$disk->exists($variantPath)) {
             throw new RuntimeException(
@@ -220,7 +259,9 @@ class LessonVideoService
             );
         }
 
-        $content = $disk->get($variantPath);
+        $content = $disk->get(
+            $variantPath
+        );
 
         return $this->rewriteVariantManifest(
             $content,
@@ -231,7 +272,7 @@ class LessonVideoService
     }
 
     /**
-     * إنشاء رابط TS قصير الصلاحية لحظة طلب المقطع.
+     * إنشاء رابط TS قصير الصلاحية.
      *
      * @return array<string, string>
      */
@@ -240,21 +281,22 @@ class LessonVideoService
         string $quality,
         string $segment,
         Lesson $lesson,
-        User $user,
+        Authenticatable $actor,
         Request $request
     ): array {
         $this->validatePlaybackSession(
             $playbackSessionId,
             $lesson,
-            $user,
+            $actor,
             $request
         );
 
-        $relativePath = $this->segmentRelativePath(
-            $lesson,
-            $quality,
-            $segment
-        );
+        $relativePath =
+            $this->segmentRelativePath(
+                $lesson,
+                $quality,
+                $segment
+            );
 
         $disk = Storage::disk(
             $lesson->hls_disk
@@ -288,13 +330,17 @@ class LessonVideoService
 
         return [
             'segment_url' => $signedUrl,
+
             'expires_at' =>
                 $expiresAt->toIso8601String(),
         ];
     }
 
     /**
-     * يعيد URI داخلي لـNginx وليس مسار نظام الملفات.
+     * إرجاع URI داخلي إلى Nginx.
+     *
+     * هذا الطلب لا يحتوي Actor لأنه يعمل بواسطة
+     * Signed URL، لذلك نتحقق من Session نفسها.
      */
     public function getInternalSegmentUri(
         string $playbackSessionId,
@@ -303,10 +349,6 @@ class LessonVideoService
         Lesson $lesson,
         Request $request
     ): string {
-        /*
-         * لا يوجد User هنا لأن الرابط النهائي Signed،
-         * لكننا نتحقق من Session وUser-Agent وIP الاختياري.
-         */
         $this->validatePlaybackSession(
             $playbackSessionId,
             $lesson,
@@ -314,11 +356,12 @@ class LessonVideoService
             $request
         );
 
-        $relativePath = $this->segmentRelativePath(
-            $lesson,
-            $quality,
-            $segment
-        );
+        $relativePath =
+            $this->segmentRelativePath(
+                $lesson,
+                $quality,
+                $segment
+            );
 
         $disk = Storage::disk(
             $lesson->hls_disk
@@ -336,12 +379,14 @@ class LessonVideoService
     }
 
     /**
+     * التحقق من جلسة التشغيل.
+     *
      * @return array<string, mixed>
      */
     public function validatePlaybackSession(
         string $playbackSessionId,
         Lesson $lesson,
-        ?User $user,
+        ?Authenticatable $actor,
         Request $request
     ): array {
         if (!preg_match(
@@ -353,9 +398,10 @@ class LessonVideoService
             );
         }
 
-        $cacheKey = $this->playbackCacheKey(
-            $playbackSessionId
-        );
+        $cacheKey =
+            $this->playbackCacheKey(
+                $playbackSessionId
+            );
 
         $session = $this->cache->get(
             $cacheKey
@@ -367,9 +413,13 @@ class LessonVideoService
             );
         }
 
+        /*
+         * التأكد أن الجلسة مرتبطة بنفس الدرس.
+         */
         if (
-            (int) ($session['lesson_id'] ?? 0)
-            !==
+            (int) (
+                $session['lesson_id'] ?? 0
+            ) !==
             (int) $lesson->id
         ) {
             throw new AuthorizationException(
@@ -377,47 +427,84 @@ class LessonVideoService
             );
         }
 
-        if (
-            $user !== null &&
-            (int) ($session['user_id'] ?? 0)
-            !==
-            (int) $user->id
-        ) {
-            throw new AuthorizationException(
-                'جلسة التشغيل لا تخص هذا المستخدم.'
+        /*
+         * عند وجود Actor، نتحقق من نوع الحساب ورقمه.
+         */
+        if ($actor !== null) {
+            [
+                $currentActorType,
+                $currentActorId,
+            ] = $this->actorIdentity($actor);
+
+            $sessionActorType = (string) (
+                $session['actor_type'] ?? ''
             );
+
+            $sessionActorId = (string) (
+                $session['actor_id'] ?? ''
+            );
+
+            if (
+                $sessionActorType === '' ||
+                $sessionActorId === '' ||
+                !hash_equals(
+                    $sessionActorType,
+                    $currentActorType
+                ) ||
+                !hash_equals(
+                    $sessionActorId,
+                    $currentActorId
+                )
+            ) {
+                throw new AuthorizationException(
+                    'جلسة التشغيل لا تخص هذا الحساب.'
+                );
+            }
         }
 
         $absoluteExpiresAt = (int) (
-            $session['absolute_expires_at'] ?? 0
+            $session[
+                'absolute_expires_at'
+            ] ?? 0
         );
 
         if (
             $absoluteExpiresAt <= 0 ||
-            now()->timestamp >= $absoluteExpiresAt
+            now()->timestamp >=
+                $absoluteExpiresAt
         ) {
-            $this->cache->forget($cacheKey);
+            $this->cache->forget(
+                $cacheKey
+            );
 
             throw new AuthorizationException(
                 'انتهت المدة القصوى لجلسة التشغيل.'
             );
         }
 
+        /*
+         * معطل حاليًا في .env بسبب مرور الطلب
+         * عبر Next.js Proxy.
+         */
         if (
             config(
                 'lesson_video.bind_user_agent',
-                true
+                false
             )
         ) {
             $expectedHash = (string) (
-                $session['user_agent_hash'] ?? ''
+                $session[
+                    'user_agent_hash'
+                ] ?? ''
             );
 
             if (
                 $expectedHash === '' ||
                 !hash_equals(
                     $expectedHash,
-                    $this->userAgentHash($request)
+                    $this->userAgentHash(
+                        $request
+                    )
                 )
             ) {
                 throw new AuthorizationException(
@@ -449,22 +536,49 @@ class LessonVideoService
             }
         }
 
+        /*
+         * التحقق أن الجلسة هي الجلسة النشطة الحالية
+         * لهذا الحساب وهذا الدرس.
+         */
         if (
             config(
                 'lesson_video.single_session_per_lesson',
                 true
             )
         ) {
+            $sessionActorType = (string) (
+                $session['actor_type'] ?? ''
+            );
+
+            $sessionActorId = (string) (
+                $session['actor_id'] ?? ''
+            );
+
+            if (
+                $sessionActorType === '' ||
+                $sessionActorId === ''
+            ) {
+                throw new AuthorizationException(
+                    'بيانات جلسة التشغيل غير صالحة.'
+                );
+            }
+
+            $activeKey =
+                $this->activeSessionCacheKey(
+                    $sessionActorType,
+                    $sessionActorId,
+                    $lesson->id
+                );
+
             $activePlaybackSessionId =
                 $this->cache->get(
-                    $this->activeSessionCacheKey(
-                        (int) $session['user_id'],
-                        $lesson->id
-                    )
+                    $activeKey
                 );
 
             if (
-                !is_string($activePlaybackSessionId) ||
+                !is_string(
+                    $activePlaybackSessionId
+                ) ||
                 !hash_equals(
                     $activePlaybackSessionId,
                     $playbackSessionId
@@ -477,7 +591,8 @@ class LessonVideoService
         }
 
         /*
-         * تمديد Idle Timeout مع عدم تجاوز Absolute Timeout.
+         * تمديد Idle Timeout دون تجاوز
+         * Absolute Timeout.
          */
         $this->storeSession(
             $playbackSessionId,
@@ -487,6 +602,9 @@ class LessonVideoService
         return $session;
     }
 
+    /**
+     * استبدال روابط الجودات في Master Playlist.
+     */
     private function rewriteMasterManifest(
         string $content,
         Lesson $lesson,
@@ -504,35 +622,47 @@ class LessonVideoService
 
             if (
                 $trimmed === '' ||
-                str_starts_with($trimmed, '#')
+                str_starts_with(
+                    $trimmed,
+                    '#'
+                )
             ) {
                 $result[] = $line;
                 continue;
             }
 
             /*
-             * FFmpeg يكتب مثل:
+             * FFmpeg يكتب:
              * 360p/index.m3u8
              */
             $quality = basename(
                 dirname($trimmed)
             );
 
-            $this->validateQuality($quality);
+            $this->validateQuality(
+                $quality
+            );
 
             $result[] = $this->url->route(
                 'user.lessons.video.hls.variant',
                 [
                     'lesson' => $lesson->id,
-                    'psid' => $playbackSessionId,
+                    'psid' =>
+                        $playbackSessionId,
                     'quality' => $quality,
                 ]
             );
         }
 
-        return implode("\n", $result) . "\n";
+        return implode(
+            "\n",
+            $result
+        ) . "\n";
     }
 
+    /**
+     * استبدال أسماء ملفات TS بروابط Ticket.
+     */
     private function rewriteVariantManifest(
         string $content,
         Lesson $lesson,
@@ -551,46 +681,65 @@ class LessonVideoService
 
             if (
                 $trimmed === '' ||
-                str_starts_with($trimmed, '#')
+                str_starts_with(
+                    $trimmed,
+                    '#'
+                )
             ) {
                 $result[] = $line;
                 continue;
             }
 
-            $segment = basename($trimmed);
+            $segment = basename(
+                $trimmed
+            );
 
-            $this->validateSegment($segment);
+            $this->validateSegment(
+                $segment
+            );
 
-            /*
-             * الـPlaylist لا تحتوي رابط الملف الحقيقي.
-             * تحتوي Ticket endpoint فقط.
-             */
             $result[] = $this->url->route(
                 'user.lessons.video.hls.ticket',
                 [
                     'lesson' => $lesson->id,
-                    'psid' => $playbackSessionId,
+                    'psid' =>
+                        $playbackSessionId,
                     'quality' => $quality,
                     'segment' => $segment,
                 ]
             );
         }
 
-        return implode("\n", $result) . "\n";
+        return implode(
+            "\n",
+            $result
+        ) . "\n";
     }
 
+    /**
+     * بناء مسار مقطع TS النسبي.
+     */
     private function segmentRelativePath(
         Lesson $lesson,
         string $quality,
         string $segment
     ): string {
-        $this->validateQuality($quality);
-        $this->validateSegment($segment);
+        $this->validateQuality(
+            $quality
+        );
 
-        return $this->videoBasePath($lesson) .
-            "/{$quality}/{$segment}";
+        $this->validateSegment(
+            $segment
+        );
+
+        return $this->videoBasePath(
+            $lesson
+        ) . "/{$quality}/{$segment}";
     }
 
+    /**
+     * جلب المسار الأساسي لفيديو HLS.
+     */
     private function videoBasePath(
         Lesson $lesson
     ): string {
@@ -611,6 +760,9 @@ class LessonVideoService
         return $path;
     }
 
+    /**
+     * التحقق من اسم الجودة.
+     */
     private function validateQuality(
         string $quality
     ): void {
@@ -624,6 +776,9 @@ class LessonVideoService
         }
     }
 
+    /**
+     * التحقق من اسم ملف Segment.
+     */
     private function validateSegment(
         string $segment
     ): void {
@@ -637,6 +792,9 @@ class LessonVideoService
         }
     }
 
+    /**
+     * التحقق أن الفيديو جاهز.
+     */
     private function assertVideoReady(
         Lesson $lesson
     ): void {
@@ -651,17 +809,29 @@ class LessonVideoService
     }
 
     /**
+     * تخزين جلسة التشغيل مع Idle Timeout.
+     *
      * @param array<string, mixed> $session
      */
     private function storeSession(
         string $playbackSessionId,
         array $session
     ): void {
+        $absoluteTimestamp = (int) (
+            $session[
+                'absolute_expires_at'
+            ] ?? 0
+        );
+
+        if ($absoluteTimestamp <= 0) {
+            throw new RuntimeException(
+                'Invalid playback expiration.'
+            );
+        }
+
         $absoluteExpiresAt =
             Carbon::createFromTimestamp(
-                (int) $session[
-                    'absolute_expires_at'
-                ]
+                $absoluteTimestamp
             );
 
         $idleExpiresAt = now()->addMinutes(
@@ -671,11 +841,12 @@ class LessonVideoService
             )
         );
 
-        $cacheExpiresAt = $idleExpiresAt->lessThan(
-            $absoluteExpiresAt
-        )
-            ? $idleExpiresAt
-            : $absoluteExpiresAt;
+        $cacheExpiresAt =
+            $idleExpiresAt->lessThan(
+                $absoluteExpiresAt
+            )
+                ? $idleExpiresAt
+                : $absoluteExpiresAt;
 
         $this->cache->put(
             $this->playbackCacheKey(
@@ -686,6 +857,38 @@ class LessonVideoService
         );
     }
 
+    /**
+     * استخراج نوع الحساب ورقمه.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function actorIdentity(
+        Authenticatable $actor
+    ): array {
+        $actorType = get_class($actor);
+
+        $actorId = $actor
+            ->getAuthIdentifier();
+
+        if (
+            $actorType === '' ||
+            $actorId === null ||
+            $actorId === ''
+        ) {
+            throw new AuthorizationException(
+                'بيانات الحساب غير صالحة.'
+            );
+        }
+
+        return [
+            $actorType,
+            (string) $actorId,
+        ];
+    }
+
+    /**
+     * بصمة User-Agent.
+     */
     private function userAgentHash(
         Request $request
     ): string {
@@ -696,6 +899,9 @@ class LessonVideoService
         );
     }
 
+    /**
+     * بصمة IP.
+     */
     private function ipHash(
         Request $request
     ): string {
@@ -706,20 +912,35 @@ class LessonVideoService
         );
     }
 
+    /**
+     * مفتاح جلسة التشغيل.
+     */
     private function playbackCacheKey(
         string $playbackSessionId
     ): string {
         return 'lesson_video:session:' .
-            hash('sha256', $playbackSessionId);
+            hash(
+                'sha256',
+                $playbackSessionId
+            );
     }
 
+    /**
+     * مفتاح الجلسة النشطة للحساب والدرس.
+     */
     private function activeSessionCacheKey(
-        int $userId,
+        string $actorType,
+        string $actorId,
         int $lessonId
     ): string {
+        $actorHash = hash(
+            'sha256',
+            $actorType . '|' . $actorId
+        );
+
         return sprintf(
-            'lesson_video:active:user:%d:lesson:%d',
-            $userId,
+            'lesson_video:active:%s:lesson:%d',
+            $actorHash,
             $lessonId
         );
     }

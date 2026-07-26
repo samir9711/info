@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Admin;
 use App\Models\CourseApplication;
+use App\Models\CourseInstructor;
 use App\Models\Instructor;
 use App\Models\Lesson;
 use App\Models\User;
@@ -13,8 +14,11 @@ class LessonPolicy
 {
     use HandlesAuthorization;
 
+    /**
+     * تحديد من يستطيع تشغيل فيديو الدرس.
+     */
     public function streamVideo(
-        User|Admin|Instructor $user,
+        User|Admin|Instructor $actor,
         Lesson $lesson
     ): bool {
         $lesson->loadMissing('course');
@@ -25,6 +29,45 @@ class LessonPolicy
             return false;
         }
 
+        /*
+         * الأدمن يستطيع مشاهدة جميع فيديوهات الدروس.
+         */
+        if ($actor instanceof Admin) {
+            return true;
+        }
+
+        /*
+         * الإنستركتور يستطيع المشاهدة إذا كان مرتبطًا بالكورس.
+         */
+        if ($actor instanceof Instructor) {
+            $isAssignedToCourse =
+                CourseInstructor::query()
+                    ->where(
+                        'course_id',
+                        $lesson->course_id
+                    )
+                    ->where(
+                        'instructor_id',
+                        $actor->id
+                    )
+                    ->exists();
+
+            /*
+             * هذا الشرط اختياري:
+             * اسمح أيضًا لمن أنشأ الكورس بالمشاهدة.
+             */
+            $isCourseCreator =
+                isset($course->created_by) &&
+                (int) $course->created_by ===
+                (int) $actor->id;
+
+            return $isAssignedToCourse ||
+                $isCourseCreator;
+        }
+
+        /*
+         * الدروس المجانية متاحة للطالب.
+         */
         if (
             (bool) $course->is_free ||
             (bool) $lesson->free_preview
@@ -32,17 +75,10 @@ class LessonPolicy
             return true;
         }
 
-        if ($user instanceof Admin) {
-            return true;
-        }
-
-        if ($user instanceof Instructor) {
-            return (int) $course->created_by
-                ===
-                (int) $user->id;
-        }
-
-        if ($user instanceof User) {
+        /*
+         * الطالب يجب أن يكون لديه طلب كورس مقبول.
+         */
+        if ($actor instanceof User) {
             return CourseApplication::query()
                 ->where(
                     'course_id',
@@ -50,7 +86,7 @@ class LessonPolicy
                 )
                 ->where(
                     'applicant_id',
-                    $user->id
+                    $actor->id
                 )
                 ->where('status', 1)
                 ->exists();

@@ -6,6 +6,8 @@ use App\Models\BaseModel;
 
 use App\Support\HasTags;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Course extends BaseModel
 {
@@ -107,11 +109,7 @@ class Course extends BaseModel
         return $this->hasMany(Lesson::class);
     }
 
-    public function instructors()
-    {
-        return $this->belongsToMany(Instructor::class,'course_instructors','course_id','instructor_id')
-        ->withTimestamps();
-    }
+
 
     public function applications()
     {
@@ -133,6 +131,16 @@ class Course extends BaseModel
         return $this->belongsToMany(Quiz::class, 'course_quizzes', 'course_id', 'quiz_id')
             ->withPivot('is_final')
             ->withTimestamps();
+    }
+
+    public function courseInstructors(): HasMany
+    {
+        return $this->hasMany(CourseInstructor::class,'course_id');
+    }
+
+    public function instructors(): BelongsToMany
+    {
+        return $this->belongsToMany(Instructor::class,'course_instructors','course_id','instructor_id');
     }
 
     //

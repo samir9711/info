@@ -156,7 +156,7 @@ Route::prefix('user')->name('user.')->group(function () {
 
 
 
-    Route::middleware('auth:user')
+    Route::middleware('auth:user,admin,instructor')
     ->group(function () {
         Route::post(
             'lessons/{lesson}/video/session',
