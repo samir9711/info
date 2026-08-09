@@ -13,6 +13,7 @@ use App\Models\Answer;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Basic\BasicRequest;
+use Illuminate\Http\Request;
 
 class LessonService extends BasicCrudService
 {
@@ -243,7 +244,7 @@ class LessonService extends BasicCrudService
     }
 
 
-    public function getInstructorLessons(BasicRequest $request): mixed
+    public function getInstructorLessons(Request $request): mixed
     {
         $instructor = $request->user('instructor');
 
