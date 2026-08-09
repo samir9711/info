@@ -16,4 +16,14 @@ class LessonController extends FatherCrudController
         $this->createRequest = StoreLessonRequest::class;
         $this->updateRequest = StoreLessonRequest::class;
     }
+
+    public function getInstructorLessons(Request $request)
+    {
+        try {
+            $data = $this->service::getInstructorLessons($request);
+            return $this->apiResponse($data);
+        } catch (\Exception $e) {
+            return $this->handleException($e);
+        }
+    }
 }

@@ -40,11 +40,12 @@ Route::prefix('instructor')->group(function () {
     Route::prefix('lesson')->middleware('auth:instructor')->group(function () {
         Route::get('/all/paginated', [LessonController::class, 'allPaginated']);
         Route::get('/all',           [LessonController::class, 'all']);
+        Route::get('/my',            [LessonController::class, 'getInstructorLessons']);
         Route::post('/show',         [LessonController::class, 'show']);
         Route::post('/create',       [LessonController::class, 'store']);
         Route::post('/update',       [LessonController::class, 'update']);
         Route::delete('/destroy',    [LessonController::class, 'destroy']);
-        Route::get('/{lesson}/video',[LessonVideoController::class, 'showForInstructor']);
+       // Route::get('/{lesson}/video',[LessonVideoController::class, 'showForInstructor']);
 
     });
 

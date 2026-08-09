@@ -241,4 +241,23 @@ class LessonService extends BasicCrudService
             }
         }
     }
+
+
+    public function getInstructorLessons(BasicRequest $request): mixed
+    {
+        $instructor = $request->user('instructor');
+
+        if (!$instructor) {
+            abort(401);
+        }
+
+        $lessons = Lesson::query()
+            ->whereHas('course', function ($query) use ($instructor) {
+                $query->where('created_by', $instructor->id);
+            })
+            ->with($this->relations)
+            ->paginate($request->get('per_page', 15));
+
+        return $this->resource::collection($lessons);
+    }
 }
