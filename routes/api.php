@@ -577,7 +577,7 @@ Route::prefix('single-lesson')->group(function () {
     Route::post('/deactivate',   [\App\Http\Controllers\SingleLesson\SingleLessonController::class, 'deactivate']);
 });
 */
-
+/*
 // Event PUBLIC ROUTES
 Route::prefix('event')->group(function () {
     Route::get('/all/paginated', [\App\Http\Controllers\Event\EventController::class, 'allPaginated']);
@@ -598,4 +598,15 @@ Route::prefix('event-video')->group(function () {
     Route::post('/update',       [\App\Http\Controllers\EventVideo\EventVideoController::class, 'update']);
     Route::post('/activate',     [\App\Http\Controllers\EventVideo\EventVideoController::class, 'activate']);
     Route::post('/deactivate',   [\App\Http\Controllers\EventVideo\EventVideoController::class, 'deactivate']);
+});
+*/
+// PodcastCollection PUBLIC ROUTES
+Route::prefix('podcast-collection')->group(function () {
+    Route::get('/all/paginated', [\App\Http\Controllers\PodcastCollection\PodcastCollectionController::class, 'allPaginated']);
+    Route::get('/all',           [\App\Http\Controllers\PodcastCollection\PodcastCollectionController::class, 'all']);
+    Route::post('/show',         [\App\Http\Controllers\PodcastCollection\PodcastCollectionController::class, 'show']);
+    Route::post('/create',       [\App\Http\Controllers\PodcastCollection\PodcastCollectionController::class, 'store']);
+    Route::post('/update',       [\App\Http\Controllers\PodcastCollection\PodcastCollectionController::class, 'update']);
+    Route::post('/activate',     [\App\Http\Controllers\PodcastCollection\PodcastCollectionController::class, 'activate']);
+    Route::post('/deactivate',   [\App\Http\Controllers\PodcastCollection\PodcastCollectionController::class, 'deactivate']);
 });

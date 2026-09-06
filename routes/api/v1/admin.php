@@ -20,6 +20,7 @@ use App\Http\Controllers\Lesson\LessonController;
 use App\Http\Controllers\LessonComment\LessonCommentController;
 use App\Http\Controllers\LessonVideoController;
 use App\Http\Controllers\Podcast\PodcastController;
+use App\Http\Controllers\PodcastCollection\PodcastCollectionController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\PrivacyUsage\PrivacyUsageController;
 use App\Http\Controllers\Setting\SettingController;
@@ -288,6 +289,16 @@ Route::prefix('admin')->group(function () {
         Route::post('/create',       [EventVideoController::class, 'store']);
         Route::post('/update',       [EventVideoController::class, 'update']);
         Route::delete('/destroy',    [EventVideoController::class, 'destroy']);
+    });
+
+
+    Route::prefix('podcast-collection')->middleware('auth:admin')->group(function () {
+        Route::get('/all/paginated', [PodcastCollectionController::class, 'allPaginated']);
+        Route::get('/all',           [PodcastCollectionController::class, 'all']);
+        Route::post('/show',         [PodcastCollectionController::class, 'show']);
+        Route::post('/create',       [PodcastCollectionController::class, 'store']);
+        Route::post('/update',       [PodcastCollectionController::class, 'update']);
+        Route::delete('/destroy',    [PodcastCollectionController::class, 'destroy']);
     });
 
 });

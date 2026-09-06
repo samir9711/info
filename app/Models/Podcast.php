@@ -17,8 +17,10 @@ class Podcast extends BaseModel
         'duration' => 'duration',
         'instructor_id' => 'instructor_id',
         'category_id' => 'category_id',
+        'collection_id' => 'collection_id',
         'views' => 'views',
         'downloads' => 'downloads',
+        ''
     ];
 
     protected $casts = [
@@ -41,14 +43,16 @@ class Podcast extends BaseModel
     protected array $filterable = [
 
         'instructor_id'=>'int',
-        'category_id'=>'int'
+        'category_id'=>'int',
+        'collection_id'=>'int',
 
 
     ];
 
     protected array $dynamicFilterColumns = [
         'instructor_id',
-        'category_id'
+        'category_id',
+        'collection_id',
     ];
 
 
@@ -60,6 +64,11 @@ class Podcast extends BaseModel
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function collection()
+    {
+        return $this->belongsTo(PodcastCollection::class, 'collection_id');
     }
 
     //

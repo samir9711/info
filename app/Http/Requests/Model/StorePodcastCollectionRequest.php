@@ -4,12 +4,12 @@ namespace App\Http\Requests\Model;
 
 use App\Http\Requests\Basic\BasicRequest;use Illuminate\Foundation\Http\FormRequest;
 
-class StorePodcastRequest extends BasicRequest
+class StorePodcastCollectionRequest extends BasicRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
-
+    
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,14 +22,7 @@ class StorePodcastRequest extends BasicRequest
             'title' => 'required|array',
             'description' => 'nullable|array',
             'cover' => 'nullable|string|max:255',
-            'audio' => 'nullable|string|max:255',
-            'video' => 'nullable|string|max:255',
-            'duration' => 'nullable|integer',
-            'instructor_id' => 'nullable|integer|exists:instructors,id',
-            'category_id' => 'nullable|integer|exists:categories,id',
-            'collection_id'=>'required|integer|exists:podcast_collections,id'
-            //'views' => 'required|integer',
-            //'downloads' => 'required|integer',
+            'sort_order' => 'required|integer',
         ];
     }
 

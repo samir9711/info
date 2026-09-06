@@ -2,26 +2,21 @@
 
 namespace App\Http\Resources\Model;
 
-use App\Models\Podcast;
+use App\Models\PodcastCollection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Basic\BasicResource;
 use App\Services\Basic\ModelColumnsService;
 
-class PodcastResource extends BasicResource
+class PodcastCollectionResource extends BasicResource
 {
     public function toArray(Request $request): array
     {
-        $data = $this->initResource(
+        return $this->initResource(
             ModelColumnsService::getServiceFor(
-                Podcast::class
+                PodcastCollection::class
             )
         );
-        $data['collection'] = $this->whenLoaded('collection', function () {
-            return $this->collection ? $this->collection->toArray() : null;
-        });
-        
-        return $data;
     }
 
     protected function initResource($modelColumnsService): array
