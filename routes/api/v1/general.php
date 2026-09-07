@@ -11,6 +11,7 @@ use App\Http\Controllers\EventVideo\EventVideoController;
 use App\Http\Controllers\Ministry\MinistryController;
 use App\Http\Controllers\MinistryAccount\MinistryAccountController;
 use App\Http\Controllers\Podcast\PodcastController;
+use App\Http\Controllers\PodcastCollection\PodcastCollectionController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
 use App\Http\Controllers\SingleLesson\SingleLessonController;
 use App\Http\Controllers\TermsCondition\TermsConditionController;
@@ -50,6 +51,13 @@ use Illuminate\Support\Facades\Route;
         Route::get('/all/paginated', [UserController::class, 'allPaginated']);
         Route::get('/all',           [UserController::class, 'all']);
         Route::post('/show',         [UserController::class, 'show']);
+
+    });
+
+    Route::prefix('podcast-collection')->group(function () {
+        Route::get('/all/paginated', [PodcastCollectionController::class, 'allPaginated']);
+        Route::get('/all',           [PodcastCollectionController::class, 'all']);
+        Route::post('/show',         [PodcastCollectionController::class, 'show']);
 
     });
 
