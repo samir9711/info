@@ -20,7 +20,7 @@ class Podcast extends BaseModel
         'collection_id' => 'collection_id',
         'views' => 'views',
         'downloads' => 'downloads',
-        ''
+
     ];
 
     protected $casts = [

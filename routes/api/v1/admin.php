@@ -19,6 +19,7 @@ use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Lesson\LessonController;
 use App\Http\Controllers\LessonComment\LessonCommentController;
 use App\Http\Controllers\LessonVideoController;
+use App\Http\Controllers\MediaUploadController;
 use App\Http\Controllers\Podcast\PodcastController;
 use App\Http\Controllers\PodcastCollection\PodcastCollectionController;
 use App\Http\Controllers\PrivacyPolicy\PrivacyPolicyController;
@@ -301,5 +302,18 @@ Route::prefix('admin')->group(function () {
         Route::delete('/destroy',    [PodcastCollectionController::class, 'destroy']);
     });
 
+
+    Route::middleware('auth:admin')->group(function () {
+
+        Route::post('/media-uploads',[MediaUploadController::class, 'create']
+        );
+
+    });
+
 });
+
+Route::post(
+    '/internal/tusd/hook',
+    [MediaUploadController::class, 'tusdHook']
+);
 
