@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 
 
@@ -190,5 +191,9 @@ class AppServiceProvider extends ServiceProvider
                 );
             }
         );
+
+        Relation::enforceMorphMap([
+        'podcast' => \App\Models\Podcast::class,
+        ]);
     }
 }

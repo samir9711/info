@@ -9,7 +9,7 @@ class MediaUpload extends BaseModel
 {
     protected $fillable = [
         'uuid',
-        'user_id',
+        'admin_id',
         'type',
         'model_id',
         'model_type',
@@ -24,10 +24,11 @@ class MediaUpload extends BaseModel
         'started_at',
         'completed_at',
         'failed_at',
+        'upload_token_hash',
     ];
 
     protected $casts = [
-        'user_id' => 'integer',
+        'admin_id' => 'integer',
         'model_id' => 'integer',
         'size' => 'integer',
         'uploaded_size' => 'integer',
@@ -36,13 +37,17 @@ class MediaUpload extends BaseModel
         'failed_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+    public function admin(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Admin::class);
     }
 
     public function uploadable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo(
+            'uploadable',
+            'model_type',
+            'model_id'
+        );
     }
 }

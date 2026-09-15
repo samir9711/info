@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessMediaUpload;
 use App\Models\MediaUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,18 +15,19 @@ class MediaUploadController extends Controller
             'type' => [
                 'required',
                 'string',
-                'in:podcast,event_video,single_lesson,lesson'
+                'in:podcast',
             ],
 
             'model_id' => [
                 'required',
                 'integer',
+                'exists:podcasts,id',
             ],
 
             'model_type' => [
                 'required',
                 'string',
-                'in:podcast,event_video,single_lesson,lesson'
+                'in:podcast',
             ],
 
             'file_name' => [
@@ -37,23 +39,25 @@ class MediaUploadController extends Controller
             'mime_type' => [
                 'required',
                 'string',
-                'max:100',
+                'in:video/mp4,video/quicktime,video/webm,video/x-matroska',
             ],
 
             'size' => [
                 'required',
                 'integer',
                 'min:1',
-                'max:10737418240'
+                'max:10737418240',
             ],
         ]);
 
-        $user = $request->user();
+        $admin = $request->user('admin');
+
+        $plainUploadToken = Str::random(64);
 
         $upload = MediaUpload::create([
             'uuid' => (string) Str::uuid(),
 
-            'user_id' => $user?->id,
+            'admin_id' => $admin?->id,
 
             'type' => $validated['type'],
 
@@ -67,6 +71,13 @@ class MediaUploadController extends Controller
 
             'size' => $validated['size'],
 
+            'uploaded_size' => 0,
+
+            'upload_token_hash' => hash(
+                'sha256',
+                $plainUploadToken
+            ),
+
             'status' => 'pending',
 
             'started_at' => now(),
@@ -79,8 +90,12 @@ class MediaUploadController extends Controller
 
             'metadata' => [
                 'upload_id' => $upload->uuid,
-                'filename' => base64_encode($validated['file_name']),
-                'filetype' => base64_encode($validated['mime_type']),
+
+                'upload_token' => $plainUploadToken,
+
+                'filename' => $validated['file_name'],
+
+                'filetype' => $validated['mime_type'],
             ],
         ], 201);
     }
@@ -89,10 +104,6 @@ class MediaUploadController extends Controller
     public function tusdHook(Request $request)
     {
         $type = $request->input('Type');
-
-        if ($type !== 'post-finish') {
-            return response()->json([]);
-        }
 
         $upload = $request->input('Event.Upload');
 
@@ -104,8 +115,12 @@ class MediaUploadController extends Controller
 
         $uploadUuid = $metadata['upload_id'] ?? null;
 
-        if (! $uploadUuid) {
-            return response()->json([]);
+        $uploadToken = $metadata['upload_token'] ?? null;
+
+        if (! $uploadUuid || ! $uploadToken) {
+            return $this->rejectTusUpload(
+                'Missing upload credentials.'
+            );
         }
 
         $mediaUpload = MediaUpload::where(
@@ -114,29 +129,116 @@ class MediaUploadController extends Controller
         )->first();
 
         if (! $mediaUpload) {
+            return $this->rejectTusUpload(
+                'Upload session was not found.'
+            );
+        }
+
+        $expectedHash = $mediaUpload->upload_token_hash;
+
+        $receivedHash = hash(
+            'sha256',
+            $uploadToken
+        );
+
+        if (
+            ! $expectedHash ||
+            ! hash_equals(
+                $expectedHash,
+                $receivedHash
+            )
+        ) {
+            return $this->rejectTusUpload(
+                'Invalid upload token.'
+            );
+        }
+
+        if ($type === 'pre-create') {
+
+            $size = (int) ($upload['Size'] ?? 0);
+
+            if (
+                $size <= 0 ||
+                $size !== (int) $mediaUpload->size
+            ) {
+                return $this->rejectTusUpload(
+                    'Invalid upload size.'
+                );
+            }
+
+            if (! in_array(
+                $mediaUpload->status,
+                ['pending', 'uploading'],
+                true
+            )) {
+                return $this->rejectTusUpload(
+                    'Upload session is not active.'
+                );
+            }
+
             return response()->json([]);
         }
 
-        $storage = $upload['Storage'] ?? [];
+        if ($type === 'post-create') {
 
-        $path = $storage['Path'] ?? null;
+            $mediaUpload->update([
+                'tus_id' => $upload['ID'] ?? null,
+                'status' => 'uploading',
+            ]);
 
-        $mediaUpload->update([
-            'tus_id' => $upload['ID'] ?? null,
+            return response()->json([]);
+        }
 
-            'uploaded_size' => $upload['Offset'] ?? 0,
+        if ($type === 'post-finish') {
 
-            'path' => $path,
+            $storage = $upload['Storage'] ?? [];
 
-            'status' => 'completed',
+            $path = $storage['Path'] ?? null;
 
-            'completed_at' => now(),
-        ]);
+            $mediaUpload->update([
+                'tus_id' => $upload['ID']
+                    ?? $mediaUpload->tus_id,
 
-        /*
-        * هنا نستطيع لاحقًا تشغيل FFmpeg.
-        */
+                'uploaded_size' => $upload['Offset']
+                    ?? $mediaUpload->size,
+
+                'path' => $path,
+
+                'status' => 'completed',
+
+                'completed_at' => now(),
+
+                'error' => null,
+
+                'failed_at' => null,
+            ]);
+
+            ProcessMediaUpload::dispatch(
+                $mediaUpload->id
+            );
+
+            return response()->json([]);
+        }
 
         return response()->json([]);
+    }
+
+    private function rejectTusUpload(string $message)
+    {
+        return response()->json([
+            'RejectUpload' => true,
+
+            'HTTPResponse' => [
+                'StatusCode' => 403,
+
+                'Body' => json_encode([
+                    'message' => $message,
+                ]),
+
+                'Header' => [
+                    'Content-Type' => 'application/json',
+                ],
+            ],
+        ]);
     }
 }
