@@ -86,7 +86,7 @@ class MediaUploadController extends Controller
         return response()->json([
             'upload_id' => $upload->uuid,
 
-            'endpoint' => url('/tus/'),
+            'endpoint' => rtrim(url('/tus'), '/') . '/',
 
             'metadata' => [
                 'upload_id' => $upload->uuid,
