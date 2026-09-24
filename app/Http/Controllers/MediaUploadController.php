@@ -108,7 +108,7 @@ class MediaUploadController extends Controller
         $upload = $request->input('Event.Upload');
 
         if (! $upload) {
-            return response()->json([]);
+            return $this->emptyTusHookResponse();
         }
 
         $metadata = $upload['MetaData'] ?? [];
@@ -153,6 +153,11 @@ class MediaUploadController extends Controller
             );
         }
 
+        /*
+        * =====================================================
+        * PRE CREATE
+        * =====================================================
+        */
         if ($type === 'pre-create') {
 
             $size = (int) ($upload['Size'] ?? 0);
@@ -176,19 +181,43 @@ class MediaUploadController extends Controller
                 );
             }
 
-            return response()->json([]);
+            return $this->emptyTusHookResponse();
         }
 
+        /*
+        * =====================================================
+        * POST CREATE
+        * =====================================================
+        */
         if ($type === 'post-create') {
 
-            $mediaUpload->update([
-                'tus_id' => $upload['ID'] ?? null,
-                'status' => 'uploading',
-            ]);
+            $updates = [
+                'tus_id' => $upload['ID']
+                    ?? $mediaUpload->tus_id,
+            ];
 
-            return response()->json([]);
+            /*
+            * لا نرجع completed/processing/ready إلى uploading
+            * إذا وصل post-create متأخرًا.
+            */
+            if (in_array(
+                $mediaUpload->status,
+                ['pending', 'uploading'],
+                true
+            )) {
+                $updates['status'] = 'uploading';
+            }
+
+            $mediaUpload->update($updates);
+
+            return $this->emptyTusHookResponse();
         }
 
+        /*
+        * =====================================================
+        * POST FINISH
+        * =====================================================
+        */
         if ($type === 'post-finish') {
 
             $storage = $upload['Storage'] ?? [];
@@ -213,14 +242,35 @@ class MediaUploadController extends Controller
                 'failed_at' => null,
             ]);
 
+            /*
+            * مهم:
+            * worker عندنا يستمع إلى media queue.
+            */
             ProcessMediaUpload::dispatch(
                 $mediaUpload->id
-            );
+            )->onQueue('media');
 
-            return response()->json([]);
+            return $this->emptyTusHookResponse();
         }
 
-        return response()->json([]);
+        return $this->emptyTusHookResponse();
+    }
+
+    private function emptyTusHookResponse()
+    {
+        /*
+        * مهم:
+        * tusd يريد HookResponse كـ JSON object:
+        *
+        * {}
+        *
+        * وليس:
+        *
+        * []
+        */
+        return response()->json(
+            new \stdClass()
+        );
     }
 
     private function rejectTusUpload(string $message)
