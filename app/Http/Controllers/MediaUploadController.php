@@ -6,6 +6,7 @@ use App\Jobs\ProcessMediaUpload;
 use App\Models\MediaUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class MediaUploadController extends Controller
 {
@@ -289,6 +290,40 @@ class MediaUploadController extends Controller
                     'Content-Type' => 'application/json',
                 ],
             ],
+        ]);
+    }
+
+    public function status(Request $request,string $uuid)
+    {
+        $admin = $request->user('admin');
+
+        $upload = MediaUpload::where('uuid', $uuid)
+            ->where('admin_id', $admin->id)
+            ->firstOrFail();
+
+        return response()->json([
+            'upload_id' => $upload->uuid,
+
+            'status' => $upload->status,
+
+            'size' => $upload->size,
+
+            'uploaded_size' => $upload->uploaded_size,
+
+            'path' => $upload->status === 'ready'
+                ? $upload->path
+                : null,
+
+            'url' => (
+                $upload->status === 'ready'
+                && $upload->path
+            )
+                ? Storage::disk('public')->url(
+                    $upload->path
+                )
+                : null,
+
+            'error' => $upload->error,
         ]);
     }
 }
