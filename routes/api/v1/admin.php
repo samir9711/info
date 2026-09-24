@@ -303,14 +303,15 @@ Route::prefix('admin')->group(function () {
     });
 
 
-    Route::middleware('auth:admin')->group(function () {
+   
+
+});
+Route::middleware('auth:admin')->group(function () {
 
         Route::post('/media-uploads',[MediaUploadController::class, 'create']
         );
 
     });
-
-});
 
 Route::post(
     '/internal/tusd/hook',
