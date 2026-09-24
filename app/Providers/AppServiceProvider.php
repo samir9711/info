@@ -192,8 +192,8 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
-        Relation::enforceMorphMap([
-        'podcast' => \App\Models\Podcast::class,
+         Relation::morphMap([
+            'podcast' => Podcast::class,
         ]);
     }
 }
