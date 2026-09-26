@@ -1,0 +1,48 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('podcasts', function (Blueprint $table) {
+            
+             $table->string('hls_disk')
+                ->nullable()
+                ->after('video');
+
+            $table->string('hls_path')
+                ->nullable()
+                ->after('hls_disk');
+
+            $table->string('hls_status', 30)
+                ->nullable()
+                ->index()
+                ->after('hls_path');
+
+            $table->text('hls_error')
+                ->nullable()
+                ->after('hls_status');
+
+            $table->timestamp('hls_processed_at')
+                ->nullable()
+                ->after('hls_error');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('podcasts', function (Blueprint $table) {
+            //
+        });
+    }
+};

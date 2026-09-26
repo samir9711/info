@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessMediaUpload;
 use App\Models\MediaUpload;
+use App\Models\Podcast;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -293,37 +294,117 @@ class MediaUploadController extends Controller
         ]);
     }
 
-    public function status(Request $request,string $uuid)
-    {
-        $admin = $request->user('admin');
+    public function status(
+        Request $request,
+        string $uuid
+    ) {
+        $admin =
+            $request->user(
+                'admin'
+            );
 
-        $upload = MediaUpload::where('uuid', $uuid)
-            ->where('admin_id', $admin->id)
-            ->firstOrFail();
+        $upload =
+            MediaUpload::where(
+                'uuid',
+                $uuid
+            )
+                ->where(
+                    'admin_id',
+                    $admin->id
+                )
+                ->firstOrFail();
+
+        $podcast = null;
+
+        if (
+            $upload->model_type ===
+                'podcast' &&
+            $upload->model_id
+        ) {
+            $podcast =
+                Podcast::find(
+                    $upload->model_id
+                );
+        }
+
+        $hlsMasterUrl = null;
+
+        if (
+            $podcast &&
+            $podcast->hls_status ===
+                'ready' &&
+            $podcast->hls_path
+        ) {
+            $hlsDisk =
+                $podcast->hls_disk
+                    ?: 'public';
+
+            $hlsMasterUrl =
+                Storage::disk(
+                    $hlsDisk
+                )->url(
+                    trim(
+                        $podcast->hls_path,
+                        '/'
+                    ) .
+                    '/master.m3u8'
+                );
+        }
 
         return response()->json([
-            'upload_id' => $upload->uuid,
+            'upload_id' =>
+                $upload->uuid,
 
-            'status' => $upload->status,
+            'status' =>
+                $upload->status,
 
-            'size' => $upload->size,
+            'size' =>
+                (int) $upload->size,
 
-            'uploaded_size' => $upload->uploaded_size,
+            'uploaded_size' =>
+                (int)
+                    $upload
+                        ->uploaded_size,
 
-            'path' => $upload->status === 'ready'
+            /*
+            * MP4 النهائي.
+            */
+            'path' => (
+                $upload->status ===
+                    'ready'
+            )
                 ? $upload->path
                 : null,
 
             'url' => (
-                $upload->status === 'ready'
-                && $upload->path
+                $upload->status ===
+                    'ready' &&
+                $upload->path
             )
-                ? Storage::disk('public')->url(
+                ? Storage::disk(
+                    'public'
+                )->url(
                     $upload->path
                 )
                 : null,
 
-            'error' => $upload->error,
+            /*
+            * HLS.
+            */
+            'hls_status' =>
+                $podcast?->hls_status,
+
+            'hls_master_url' =>
+                $hlsMasterUrl,
+
+            'error' =>
+                $upload->error,
+
+            /*
+            * مهم للـ Admin فقط.
+            */
+            'hls_error' =>
+                $podcast?->hls_error,
         ]);
     }
 }

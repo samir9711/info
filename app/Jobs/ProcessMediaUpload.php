@@ -27,6 +27,19 @@ class ProcessMediaUpload implements ShouldQueue
 
     public bool $failOnTimeout = true;
 
+    public int $backoff = 10;
+
+    /**
+     * MIME الحقيقي => extension النهائي.
+     */
+    private const VIDEO_EXTENSIONS = [
+        'video/mp4' => 'mp4',
+        'video/quicktime' => 'mov',
+        'video/webm' => 'webm',
+        'video/x-matroska' => 'mkv',
+        'video/x-msvideo' => 'avi',
+    ];
+
     public function __construct(
         public int $mediaUploadId
     ) {
@@ -39,67 +52,526 @@ class ProcessMediaUpload implements ShouldQueue
         );
 
         /*
-         * Idempotency:
-         * إذا تمت المعالجة سابقًا فلا نعيدها.
+         * انتهت المعالجة سابقًا.
          */
         if ($mediaUpload->status === 'ready') {
             return;
         }
 
+        /*
+         * لا نعالج Session ما زالت pending/uploading.
+         */
         if (! in_array(
             $mediaUpload->status,
-            ['completed', 'processing', 'failed'],
+            [
+                'completed',
+                'processing',
+                'failed',
+            ],
             true
         )) {
             return;
         }
 
-        $sourcePath = $mediaUpload->path;
+        try {
+            if (
+                $mediaUpload->model_type !==
+                'podcast'
+            ) {
+                throw new RuntimeException(
+                    'Unsupported media upload model type.'
+                );
+            }
 
-        if (! $sourcePath) {
-            throw new RuntimeException(
-                'Tus upload path is missing.'
+            /*
+             * مجلد tus المؤقت.
+             */
+            $tusDirectory = realpath(
+                '/var/lib/tusd/uploads'
             );
-        }
 
-        /*
-         * تأكد أن المسار فعلاً صادر من tusd storage.
-         */
-        $tusDirectory = realpath(
-            '/var/lib/tusd/uploads'
-        );
+            if (! $tusDirectory) {
+                throw new RuntimeException(
+                    'Tus upload directory does not exist.'
+                );
+            }
 
-        $realSourcePath = realpath(
-            $sourcePath
-        );
+            /*
+             * نحاول أولًا إيجاد الملف داخل tus.
+             *
+             * لكن في retry محتمل أن يكون الملف
+             * قد نُقل بالفعل إلى storage/app/public.
+             */
+            $sourcePath = $mediaUpload->path;
 
-        if (! $tusDirectory) {
-            throw new RuntimeException(
-                'Tus upload directory does not exist.'
+            $realSourcePath = null;
+
+            if (
+                is_string($sourcePath) &&
+                $sourcePath !== '' &&
+                str_starts_with(
+                    $sourcePath,
+                    '/'
+                )
+            ) {
+                $resolved = realpath(
+                    $sourcePath
+                );
+
+                if ($resolved !== false) {
+                    $realSourcePath =
+                        $resolved;
+                }
+            }
+
+            /*
+             * =========================================
+             * CASE 1:
+             * الملف ما زال موجودًا داخل tusd.
+             * =========================================
+             */
+            if ($realSourcePath) {
+                if (! str_starts_with(
+                    $realSourcePath,
+                    $tusDirectory .
+                        DIRECTORY_SEPARATOR
+                )) {
+                    throw new RuntimeException(
+                        'Invalid tus upload path.'
+                    );
+                }
+
+                [
+                    $actualSize,
+                    $actualMime,
+                    $extension,
+                ] = $this->inspectVideo(
+                    $realSourcePath,
+                    $mediaUpload
+                );
+
+                $relativePath =
+                    'podcasts/' .
+                    $mediaUpload->uuid .
+                    '.' .
+                    $extension;
+
+                $destinationPath =
+                    Storage::disk('public')
+                        ->path(
+                            $relativePath
+                        );
+
+                File::ensureDirectoryExists(
+                    dirname(
+                        $destinationPath
+                    ),
+                    0755,
+                    true
+                );
+
+                $mediaUpload->update([
+                    'status' =>
+                        'processing',
+                ]);
+
+                /*
+                 * ربما retry حصل بعد إنشاء
+                 * الملف النهائي بالفعل.
+                 */
+                if (
+                    is_file(
+                        $destinationPath
+                    ) &&
+                    (int) filesize(
+                        $destinationPath
+                    ) ===
+                    (int) $mediaUpload->size
+                ) {
+                    /*
+                     * الملف النهائي موجود وصحيح،
+                     * لا نعيد نسخه.
+                     */
+                    @unlink(
+                        $realSourcePath
+                    );
+
+                    @unlink(
+                        $realSourcePath .
+                        '.info'
+                    );
+                } else {
+                    /*
+                     * إن وجد ملف ناقص من محاولة
+                     * سابقة نحذفه.
+                     */
+                    if (
+                        is_file(
+                            $destinationPath
+                        )
+                    ) {
+                        @unlink(
+                            $destinationPath
+                        );
+                    }
+
+                    /*
+                     * الأفضل rename لأنه على نفس
+                     * filesystem عندك.
+                     */
+                    $moved = @rename(
+                        $realSourcePath,
+                        $destinationPath
+                    );
+
+                    /*
+                     * fallback إذا تغيّر filesystem
+                     * في المستقبل.
+                     */
+                    if (! $moved) {
+                        $temporaryDestination =
+                            $destinationPath .
+                            '.part';
+
+                        @unlink(
+                            $temporaryDestination
+                        );
+
+                        $input = fopen(
+                            $realSourcePath,
+                            'rb'
+                        );
+
+                        if (! $input) {
+                            throw new RuntimeException(
+                                'Unable to open source video.'
+                            );
+                        }
+
+                        $output = fopen(
+                            $temporaryDestination,
+                            'wb'
+                        );
+
+                        if (! $output) {
+                            fclose($input);
+
+                            throw new RuntimeException(
+                                'Unable to create temporary destination video.'
+                            );
+                        }
+
+                        try {
+                            $copied =
+                                stream_copy_to_stream(
+                                    $input,
+                                    $output
+                                );
+
+                            if (
+                                $copied === false
+                            ) {
+                                throw new RuntimeException(
+                                    'Failed while copying video.'
+                                );
+                            }
+                        } finally {
+                            fclose($input);
+                            fclose($output);
+                        }
+
+                        $temporarySize =
+                            filesize(
+                                $temporaryDestination
+                            );
+
+                        if (
+                            $temporarySize ===
+                                false ||
+                            (int)
+                                $temporarySize !==
+                            (int)
+                                $actualSize
+                        ) {
+                            @unlink(
+                                $temporaryDestination
+                            );
+
+                            throw new RuntimeException(
+                                'Copied video size mismatch.'
+                            );
+                        }
+
+                        /*
+                         * atomic final rename.
+                         */
+                        if (! @rename(
+                            $temporaryDestination,
+                            $destinationPath
+                        )) {
+                            @unlink(
+                                $temporaryDestination
+                            );
+
+                            throw new RuntimeException(
+                                'Could not finalize copied video.'
+                            );
+                        }
+
+                        @unlink(
+                            $realSourcePath
+                        );
+                    }
+
+                    /*
+                     * حذف tus sidecar.
+                     */
+                    @unlink(
+                        $realSourcePath .
+                        '.info'
+                    );
+                }
+
+                /*
+                 * تحقق نهائي بعد النقل.
+                 */
+                [
+                    $actualSize,
+                    $actualMime,
+                    $extension,
+                ] = $this->inspectVideo(
+                    $destinationPath,
+                    $mediaUpload
+                );
+            }
+
+            /*
+             * =========================================
+             * CASE 2:
+             * tus source اختفى، غالبًا بسبب retry
+             * بعد نجاح rename وقبل تحديث DB.
+             * =========================================
+             */
+            else {
+                $existing =
+                    $this->findExistingFinalVideo(
+                        $mediaUpload
+                    );
+
+                if (! $existing) {
+                    throw new RuntimeException(
+                        'Uploaded file does not exist in tus storage or final storage.'
+                    );
+                }
+
+                $relativePath =
+                    $existing['relative_path'];
+
+                $destinationPath =
+                    $existing[
+                        'absolute_path'
+                    ];
+
+                [
+                    $actualSize,
+                    $actualMime,
+                    $extension,
+                ] = $this->inspectVideo(
+                    $destinationPath,
+                    $mediaUpload
+                );
+            }
+
+            /*
+             * =========================================
+             * Podcast update
+             * =========================================
+             */
+            $podcast =
+                Podcast::findOrFail(
+                    $mediaUpload->model_id
+                );
+
+            /*
+             * تأكد أن Podcast تشير إلى MP4
+             * الحالي.
+             */
+            if (
+                $podcast->video !==
+                $relativePath
+            ) {
+                $podcast->update([
+                    'video' =>
+                        $relativePath,
+                ]);
+            }
+
+            /*
+             * المسار المتوقع لهذا Upload من HLS.
+             */
+            $expectedHlsPath =
+                sprintf(
+                    'podcast-hls/podcasts/%d/%s',
+                    $podcast->id,
+                    $mediaUpload->uuid
+                );
+
+            /*
+             * إذا Retry وصل هنا بعد أن HLS
+             * انتهت أصلًا، لا نعيد التحويل.
+             */
+            if (
+                $podcast->hls_status ===
+                    'ready' &&
+                $podcast->hls_path ===
+                    $expectedHlsPath
+            ) {
+                $mediaUpload->update([
+                    'path' =>
+                        $relativePath,
+
+                    'mime_type' =>
+                        $actualMime,
+
+                    'uploaded_size' =>
+                        $actualSize,
+
+                    'status' =>
+                        'ready',
+
+                    'error' => null,
+
+                    'failed_at' => null,
+                ]);
+
+                return;
+            }
+
+            /*
+             * إذا Job الـ HLS تعمل حاليًا
+             * لنفس الفيديو، لا نطلق واحدة أخرى.
+             */
+            if (
+                $podcast->video ===
+                    $relativePath &&
+                $podcast->hls_status ===
+                    'processing'
+            ) {
+                $mediaUpload->update([
+                    'path' =>
+                        $relativePath,
+
+                    'mime_type' =>
+                        $actualMime,
+
+                    'uploaded_size' =>
+                        $actualSize,
+
+                    'status' =>
+                        'processing',
+
+                    'error' => null,
+
+                    'failed_at' => null,
+                ]);
+
+                return;
+            }
+
+            /*
+             * تجهيز Podcast لمرحلة HLS.
+             *
+             * لا نمسح hls_path هنا لأن Job
+             * تحتاج المسار القديم حتى تحذفه
+             * بعد نجاح النسخة الجديدة.
+             */
+            $podcast->forceFill([
+                'hls_disk' =>
+                    'public',
+
+                'hls_status' =>
+                    'pending',
+
+                'hls_error' =>
+                    null,
+
+                'hls_processed_at' =>
+                    null,
+            ])->save();
+
+            /*
+             * MP4 جاهز، لكن HLS لم تنتهِ.
+             *
+             * لذلك status تبقى processing.
+             */
+            $mediaUpload->update([
+                'path' =>
+                    $relativePath,
+
+                'mime_type' =>
+                    $actualMime,
+
+                'uploaded_size' =>
+                    $actualSize,
+
+                'status' =>
+                    'processing',
+
+                'error' => null,
+
+                'failed_at' => null,
+            ]);
+
+            /*
+             * المرحلة الثقيلة تنتقل إلى
+             * video queue.
+             */
+            ConvertPodcastVideoToHls::dispatch(
+                $podcast->id,
+                $mediaUpload->id
             );
-        }
 
-        if (! $realSourcePath) {
-            throw new RuntimeException(
-                'Uploaded file does not exist.'
-            );
-        }
+        } catch (Throwable $e) {
+            $mediaUpload->update([
+                'status' =>
+                    'failed',
 
-        if (! str_starts_with(
-            $realSourcePath,
-            $tusDirectory . DIRECTORY_SEPARATOR
+                'error' =>
+                    mb_substr(
+                        $e->getMessage(),
+                        0,
+                        10000
+                    ),
+
+                'failed_at' =>
+                    now(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * فحص حجم الملف وMIME الحقيقي.
+     *
+     * @return array{0:int,1:string,2:string}
+     */
+    private function inspectVideo(
+        string $absolutePath,
+        MediaUpload $mediaUpload
+    ): array {
+        if (! is_file(
+            $absolutePath
         )) {
             throw new RuntimeException(
-                'Invalid tus upload path.'
+                'Video file does not exist.'
             );
         }
 
-        /*
-         * تحقق من الحجم الحقيقي.
-         */
-        $actualSize = filesize(
-            $realSourcePath
-        );
+        $actualSize =
+            filesize(
+                $absolutePath
+            );
 
         if ($actualSize === false) {
             throw new RuntimeException(
@@ -116,227 +588,141 @@ class ProcessMediaUpload implements ShouldQueue
             );
         }
 
-        /*
-         * تحقق فعليًا من MIME بعد أن وصل الملف.
-         *
-         * لا نعتمد فقط على MIME القادم من المتصفح.
-         */
         $finfo = new \finfo(
             FILEINFO_MIME_TYPE
         );
 
-        $actualMime = $finfo->file(
-            $realSourcePath
-        );
+        $actualMime =
+            $finfo->file(
+                $absolutePath
+            );
 
-        $extensions = [
-            'video/mp4' => 'mp4',
-
-            'video/quicktime' => 'mov',
-
-            'video/webm' => 'webm',
-
-            'video/x-matroska' => 'mkv',
-
-            'video/x-msvideo' => 'avi',
-        ];
-
-        if (! isset(
-            $extensions[$actualMime]
-        )) {
+        if (
+            ! is_string(
+                $actualMime
+            ) ||
+            ! isset(
+                self::VIDEO_EXTENSIONS[
+                    $actualMime
+                ]
+            )
+        ) {
             throw new RuntimeException(
-                'Unsupported uploaded video type: '
-                . $actualMime
+                'Unsupported uploaded video type: ' .
+                (
+                    is_string(
+                        $actualMime
+                    )
+                        ? $actualMime
+                        : 'unknown'
+                )
             );
         }
 
-        $extension = $extensions[$actualMime];
+        return [
+            (int) $actualSize,
 
-        /*
-         * اسم deterministic.
-         *
-         * مفيد جدًا إذا أعاد Queue محاولة الـ Job،
-         * فلا ينشئ اسمًا جديدًا كل مرة.
-         */
-        $filename =
-            $mediaUpload->uuid
-            . '.'
-            . $extension;
+            $actualMime,
 
-        /*
-         * هذا هو folder الجديد للبودكاست.
-         *
-         * إذا كان الفرونت القديم يستعمل اسمًا مختلفًا
-         * مثل podcast بدل podcasts
-         * غيّر هذا السطر فقط.
-         */
-        $folder = 'podcasts';
+            self::VIDEO_EXTENSIONS[
+                $actualMime
+            ],
+        ];
+    }
 
-        $relativePath =
-            $folder
-            . '/'
-            . $filename;
-
-        $destinationPath =
-            Storage::disk('public')
-                ->path($relativePath);
-
-        File::ensureDirectoryExists(
-            dirname($destinationPath),
-            0755,
-            true
-        );
-
-        $mediaUpload->update([
-            'status' => 'processing',
-        ]);
-
-        try {
-
-            /*
-             * rename هو الأفضل:
-             *
-             * إذا المصدر والوجهة على نفس filesystem
-             * فإن نقل 5GB شبه فوري ولا ينسخ 5GB.
-             */
-            $moved = @rename(
-                $realSourcePath,
-                $destinationPath
+    /**
+     * البحث عن الملف النهائي عند retry
+     * إذا اختفى tus source بعد rename.
+     *
+     * @return array{
+     *     relative_path:string,
+     *     absolute_path:string
+     * }|null
+     */
+    private function findExistingFinalVideo(
+        MediaUpload $mediaUpload
+    ): ?array {
+        $disk =
+            Storage::disk(
+                'public'
             );
 
-            /*
-             * في حال /var/lib و /var/www
-             * على filesystems مختلفين،
-             * rename قد يفشل.
-             *
-             * نستخدم stream copy بدون تحميل 5GB
-             * في RAM.
-             */
-            if (! $moved) {
+        /*
+         * إذا DB تحولت أصلًا إلى relative path.
+         */
+        if (
+            is_string(
+                $mediaUpload->path
+            ) &&
+            $mediaUpload->path !== '' &&
+            ! str_starts_with(
+                $mediaUpload->path,
+                '/'
+            ) &&
+            $disk->exists(
+                $mediaUpload->path
+            )
+        ) {
+            return [
+                'relative_path' =>
+                    $mediaUpload->path,
 
-                $input = fopen(
-                    $realSourcePath,
-                    'rb'
-                );
+                'absolute_path' =>
+                    $disk->path(
+                        $mediaUpload->path
+                    ),
+            ];
+        }
 
-                if (! $input) {
-                    throw new RuntimeException(
-                        'Unable to open source video.'
-                    );
-                }
+        /*
+         * وإلا نبحث بالـ deterministic UUID.
+         */
+        foreach (
+            array_values(
+                self::VIDEO_EXTENSIONS
+            )
+            as $extension
+        ) {
+            $relativePath =
+                'podcasts/' .
+                $mediaUpload->uuid .
+                '.' .
+                $extension;
 
-                $output = fopen(
-                    $destinationPath,
-                    'wb'
-                );
-
-                if (! $output) {
-                    fclose($input);
-
-                    throw new RuntimeException(
-                        'Unable to create destination video.'
-                    );
-                }
-
-                try {
-
-                    $copied = stream_copy_to_stream(
-                        $input,
-                        $output
-                    );
-
-                    if ($copied === false) {
-                        throw new RuntimeException(
-                            'Failed while copying video.'
-                        );
-                    }
-
-                } finally {
-
-                    fclose($input);
-                    fclose($output);
-                }
-
-                /*
-                 * تحقق بعد النسخ.
-                 */
-                $destinationSize =
-                    filesize($destinationPath);
-
-                if (
-                    (int) $destinationSize !==
-                    (int) $actualSize
-                ) {
-
-                    @unlink(
-                        $destinationPath
-                    );
-
-                    throw new RuntimeException(
-                        'Copied video size mismatch.'
-                    );
-                }
-
-                @unlink(
-                    $realSourcePath
-                );
-            }
-
-            /*
-             * حذف tus .info sidecar.
-             *
-             * tusd local storage ينشئ ملف البيانات
-             * وملف ID.info.
-             */
-            @unlink(
-                $realSourcePath . '.info'
-            );
-
-            /*
-             * ربط الفيديو بالـ Podcast.
-             */
             if (
-                $mediaUpload->model_type === 'podcast'
+                ! $disk->exists(
+                    $relativePath
+                )
             ) {
-
-                $podcast = Podcast::findOrFail(
-                    $mediaUpload->model_id
-                );
-
-                $podcast->update([
-                    'video' => $relativePath,
-                ]);
+                continue;
             }
 
-            /*
-             * path الآن يتحول من tus temporary path
-             * إلى Laravel public relative path.
-             */
-            $mediaUpload->update([
-                'path' => $relativePath,
+            $absolutePath =
+                $disk->path(
+                    $relativePath
+                );
 
-                'mime_type' => $actualMime,
+            $size =
+                filesize(
+                    $absolutePath
+                );
 
-                'uploaded_size' => $actualSize,
+            if (
+                $size !== false &&
+                (int) $size ===
+                (int)
+                    $mediaUpload->size
+            ) {
+                return [
+                    'relative_path' =>
+                        $relativePath,
 
-                'status' => 'ready',
-
-                'error' => null,
-
-                'failed_at' => null,
-            ]);
-
-        } catch (Throwable $e) {
-
-            $mediaUpload->update([
-                'status' => 'failed',
-
-                'error' => $e->getMessage(),
-
-                'failed_at' => now(),
-            ]);
-
-            throw $e;
+                    'absolute_path' =>
+                        $absolutePath,
+                ];
+            }
         }
+
+        return null;
     }
 }

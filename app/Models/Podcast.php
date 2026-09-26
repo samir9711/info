@@ -20,6 +20,11 @@ class Podcast extends BaseModel
         'collection_id' => 'collection_id',
         'views' => 'views',
         'downloads' => 'downloads',
+        'hls_disk' => 'hls_disk',
+        'hls_path' => 'hls_path',
+        'hls_status' => 'hls_status',
+        'hls_error' => 'hls_error',
+        'hls_processed_at' => 'hls_processed_at',
 
     ];
 
@@ -31,6 +36,7 @@ class Podcast extends BaseModel
         'category_id' => 'integer',
         'views' => 'integer',
         'downloads' => 'integer',
+        'hls_processed_at' => 'datetime',
     ];
 
     protected array $fileAttributes = [

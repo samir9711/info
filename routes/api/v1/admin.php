@@ -306,16 +306,17 @@ Route::prefix('admin')->group(function () {
 
 
 });
-Route::middleware('auth:admin')->group(function () {
 
-        Route::post('/media-uploads',[MediaUploadController::class, 'create']);
+    Route::middleware('auth:admin')->group(function () {
 
-        Route::get('/media-uploads/{uuid}',[MediaUploadController::class, 'status']);
+            Route::post('/media-uploads',[MediaUploadController::class, 'create']);
 
-    });
+            Route::get('/media-uploads/{uuid}',[MediaUploadController::class, 'status']);
 
-Route::post(
-    '/internal/tusd/hook',
-    [MediaUploadController::class, 'tusdHook']
-);
+        });
+
+    Route::post(
+        '/internal/tusd/hook',
+        [MediaUploadController::class, 'tusdHook']
+    );
 
