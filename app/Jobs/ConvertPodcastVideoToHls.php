@@ -63,6 +63,31 @@ class ConvertPodcastVideoToHls implements ShouldQueue, ShouldBeUnique
                 $this->mediaUploadId
             );
 
+        
+        $expectedHlsPath = sprintf(
+            'podcast-hls/podcasts/%d/%s',
+            $podcast->id,
+            $mediaUpload->uuid
+        );
+
+        if (
+            $podcast->hls_status === 'ready' &&
+            $podcast->hls_path === $expectedHlsPath &&
+            $mediaUpload->status === 'ready'
+        ) {
+            $existingHlsDisk = Storage::disk(
+                $podcast->hls_disk ?: 'public'
+            );
+
+            if (
+                $existingHlsDisk->exists(
+                    $expectedHlsPath . '/master.m3u8'
+                )
+            ) {
+                return;
+            }
+        }
+
         /*
          * الـ MP4 الذي نقله ProcessMediaUpload
          * موجود على public disk.
