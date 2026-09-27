@@ -8,6 +8,13 @@ use App\Models\Podcast;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Admin;
+use App\Models\Instructor;
+use App\Models\Lesson;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class MediaUploadController extends Controller
 {
@@ -17,19 +24,19 @@ class MediaUploadController extends Controller
             'type' => [
                 'required',
                 'string',
-                'in:podcast',
+                'in:podcast,lesson',
             ],
 
             'model_id' => [
                 'required',
                 'integer',
-                'exists:podcasts,id',
+                'min:1',
             ],
 
             'model_type' => [
                 'required',
                 'string',
-                'in:podcast',
+                'in:podcast,lesson',
             ],
 
             'file_name' => [
@@ -41,63 +48,206 @@ class MediaUploadController extends Controller
             'mime_type' => [
                 'required',
                 'string',
-                'in:video/mp4,video/quicktime,video/webm,video/x-matroska',
             ],
 
             'size' => [
                 'required',
                 'integer',
                 'min:1',
+
+                /*
+                * 10 GiB.
+                */
                 'max:10737418240',
             ],
         ]);
 
-        $admin = $request->user('admin');
+        if (
+            $validated['type'] !==
+            $validated['model_type']
+        ) {
+            throw ValidationException::withMessages([
+                'model_type' => [
+                    'Upload type and model type must match.',
+                ],
+            ]);
+        }
 
-        $plainUploadToken = Str::random(64);
+        $actor =
+            $this->authenticatedUploader(
+                $request
+            );
 
-        $upload = MediaUpload::create([
-            'uuid' => (string) Str::uuid(),
+        /*
+        * ================================================
+        * Podcast
+        * ================================================
+        */
+        if (
+            $validated['model_type'] ===
+            'podcast'
+        ) {
+            if (! $actor instanceof Admin) {
+                abort(403);
+            }
 
-            'admin_id' => $admin?->id,
+            $model = Podcast::query()
+                ->findOrFail(
+                    $validated['model_id']
+                );
 
-            'type' => $validated['type'],
+            $allowedMime = [
+                'video/mp4',
+                'video/quicktime',
+                'video/webm',
+                'video/x-matroska',
+            ];
+        }
 
-            'model_id' => $validated['model_id'],
+        /*
+        * ================================================
+        * Lesson
+        * ================================================
+        */
+        else {
+            $model = Lesson::query()
+                ->findOrFail(
+                    $validated['model_id']
+                );
 
-            'model_type' => $validated['model_type'],
+            Gate::forUser($actor)
+                ->authorize(
+                    'manageVideo',
+                    $model
+                );
 
-            'original_name' => $validated['file_name'],
+            $allowedMime = [
+                'video/mp4',
+                'video/quicktime',
+                'video/x-msvideo',
+                'video/x-matroska',
+                'video/webm',
+                'video/ogg',
+            ];
+        }
 
-            'mime_type' => $validated['mime_type'],
+        if (! in_array(
+            $validated['mime_type'],
+            $allowedMime,
+            true
+        )) {
+            throw ValidationException::withMessages([
+                'mime_type' => [
+                    'Unsupported video format.',
+                ],
+            ]);
+        }
 
-            'size' => $validated['size'],
+        /*
+        * لا نسمح بعمليتي رفع فعالتين
+        * لنفس Podcast/Lesson.
+        */
+        $activeUploadExists =
+            MediaUpload::query()
+                ->where(
+                    'model_type',
+                    $validated['model_type']
+                )
+                ->where(
+                    'model_id',
+                    $model->id
+                )
+                ->whereIn(
+                    'status',
+                    [
+                        'pending',
+                        'uploading',
+                        'completed',
+                        'processing',
+                    ]
+                )
+                ->exists();
 
-            'uploaded_size' => 0,
+        if ($activeUploadExists) {
+            return response()->json([
+                'message' =>
+                    'Another video upload is already active for this item.',
+            ], 409);
+        }
 
-            'upload_token_hash' => hash(
-                'sha256',
-                $plainUploadToken
-            ),
+        $plainUploadToken =
+            Str::random(64);
 
-            'status' => 'pending',
+        $upload =
+            MediaUpload::create([
+                'uuid' =>
+                    (string) Str::uuid(),
 
-            'started_at' => now(),
-        ]);
+                /*
+                * يبقى موجودًا للتوافق مع Podcast.
+                * Instructor سيكون null هنا.
+                */
+                'admin_id' =>
+                    $actor instanceof Admin
+                        ? $actor->id
+                        : null,
+
+                'type' =>
+                    $validated['type'],
+
+                'model_id' =>
+                    $model->id,
+
+                'model_type' =>
+                    $validated['model_type'],
+
+                'original_name' =>
+                    $validated['file_name'],
+
+                'mime_type' =>
+                    $validated['mime_type'],
+
+                'size' =>
+                    $validated['size'],
+
+                'uploaded_size' =>
+                    0,
+
+                'upload_token_hash' =>
+                    hash(
+                        'sha256',
+                        $plainUploadToken
+                    ),
+
+                'status' =>
+                    'pending',
+
+                'started_at' =>
+                    now(),
+            ]);
 
         return response()->json([
-            'upload_id' => $upload->uuid,
+            'upload_id' =>
+                $upload->uuid,
 
-            'endpoint' => rtrim(url('/tus'), '/') . '/',
+            'endpoint' =>
+                rtrim(
+                    url('/tus'),
+                    '/'
+                ) . '/',
 
             'metadata' => [
-                'upload_id' => $upload->uuid,
+                'upload_id' =>
+                    $upload->uuid,
 
-                'upload_token' => $plainUploadToken,
+                'upload_token' =>
+                    $plainUploadToken,
 
-                'filename' => $validated['file_name'],
+                'filename' =>
+                    $validated['file_name'],
 
-                'filetype' => $validated['mime_type'],
+                'filetype' =>
+                    $validated['mime_type'],
             ],
         ], 201);
     }
@@ -298,113 +448,206 @@ class MediaUploadController extends Controller
         Request $request,
         string $uuid
     ) {
-        $admin =
-            $request->user(
-                'admin'
+        $actor =
+            $this->authenticatedUploader(
+                $request
             );
 
         $upload =
-            MediaUpload::where(
-                'uuid',
-                $uuid
-            )
+            MediaUpload::query()
                 ->where(
-                    'admin_id',
-                    $admin->id
+                    'uuid',
+                    $uuid
                 )
                 ->firstOrFail();
 
-        $podcast = null;
-
+        /*
+        * ================================================
+        * Podcast
+        * ================================================
+        */
         if (
             $upload->model_type ===
-                'podcast' &&
-            $upload->model_id
+            'podcast'
         ) {
+            if (! $actor instanceof Admin) {
+                abort(403);
+            }
+
+            if (
+                $upload->admin_id &&
+                (int) $upload->admin_id !==
+                (int) $actor->id
+            ) {
+                abort(403);
+            }
+
             $podcast =
-                Podcast::find(
-                    $upload->model_id
-                );
-        }
+                Podcast::query()
+                    ->findOrFail(
+                        $upload->model_id
+                    );
 
-        $hlsMasterUrl = null;
+            $hlsMasterUrl = null;
 
-        if (
-            $podcast &&
-            $podcast->hls_status ===
-                'ready' &&
-            $podcast->hls_path
-        ) {
-            $hlsDisk =
-                $podcast->hls_disk
-                    ?: 'public';
-
-            $hlsMasterUrl =
-                Storage::disk(
-                    $hlsDisk
-                )->url(
-                    trim(
-                        $podcast->hls_path,
-                        '/'
-                    ) .
-                    '/master.m3u8'
-                );
-        }
-
-        return response()->json([
-            'upload_id' =>
-                $upload->uuid,
-
-            'status' =>
-                $upload->status,
-
-            'size' =>
-                (int) $upload->size,
-
-            'uploaded_size' =>
-                (int)
-                    $upload
-                        ->uploaded_size,
-
-            /*
-            * MP4 النهائي.
-            */
-            'path' => (
-                $upload->status ===
-                    'ready'
-            )
-                ? $upload->path
-                : null,
-
-            'url' => (
-                $upload->status ===
+            if (
+                $podcast->hls_status ===
                     'ready' &&
-                $upload->path
-            )
-                ? Storage::disk(
-                    'public'
-                )->url(
+                $podcast->hls_path
+            ) {
+                $hlsMasterUrl =
+                    Storage::disk(
+                        $podcast->hls_disk
+                            ?: 'public'
+                    )->url(
+                        trim(
+                            $podcast->hls_path,
+                            '/'
+                        ) .
+                        '/master.m3u8'
+                    );
+            }
+
+            return response()->json([
+                'upload_id' =>
+                    $upload->uuid,
+
+                'type' =>
+                    'podcast',
+
+                'status' =>
+                    $upload->status,
+
+                'size' =>
+                    (int) $upload->size,
+
+                'uploaded_size' =>
+                    (int)
+                        $upload->uploaded_size,
+
+                'path' =>
+                    $upload->status ===
+                        'ready'
+                        ? $upload->path
+                        : null,
+
+                'url' => (
+                    $upload->status ===
+                        'ready' &&
                     $upload->path
                 )
-                : null,
+                    ? Storage::disk(
+                        'public'
+                    )->url(
+                        $upload->path
+                    )
+                    : null,
 
-            /*
-            * HLS.
-            */
-            'hls_status' =>
-                $podcast?->hls_status,
+                'hls_status' =>
+                    $podcast->hls_status,
 
-            'hls_master_url' =>
-                $hlsMasterUrl,
+                'hls_master_url' =>
+                    $hlsMasterUrl,
 
-            'error' =>
-                $upload->error,
+                'error' =>
+                    $upload->error,
 
-            /*
-            * مهم للـ Admin فقط.
-            */
-            'hls_error' =>
-                $podcast?->hls_error,
-        ]);
+                'hls_error' =>
+                    $podcast->hls_error,
+            ]);
+        }
+
+        /*
+        * ================================================
+        * Lesson
+        * ================================================
+        */
+        if (
+            $upload->model_type ===
+            'lesson'
+        ) {
+            $lesson =
+                Lesson::query()
+                    ->findOrFail(
+                        $upload->model_id
+                    );
+
+            Gate::forUser($actor)
+                ->authorize(
+                    'manageVideo',
+                    $lesson
+                );
+
+            return response()->json([
+                'upload_id' =>
+                    $upload->uuid,
+
+                'type' =>
+                    'lesson',
+
+                'lesson_id' =>
+                    $lesson->id,
+
+                'status' =>
+                    $upload->status,
+
+                'size' =>
+                    (int) $upload->size,
+
+                'uploaded_size' =>
+                    (int)
+                        $upload->uploaded_size,
+
+                /*
+                * لا نكشف private source path
+                * للفرونت.
+                */
+                'path' => null,
+
+                'url' => null,
+
+                'hls_status' =>
+                    $lesson->hls_status,
+
+                'hls_processed_at' =>
+                    $lesson->hls_processed_at,
+
+                /*
+                * لا يوجد public master URL للدروس.
+                *
+                * التشغيل يتم من خلال
+                * LessonVideoController::stream().
+                */
+                'hls_master_url' =>
+                    null,
+
+                'error' =>
+                    $upload->error,
+
+                'hls_error' =>
+                    $lesson->hls_error,
+            ]);
+        }
+
+        abort(404);
+    }
+
+
+    private function authenticatedUploader(
+        Request $request
+    ): Authenticatable {
+        $actor =
+            $request->user();
+
+        if (
+            ! $actor instanceof Admin &&
+            ! $actor instanceof Instructor
+        ) {
+            throw new AuthenticationException(
+                'Unauthenticated.'
+            );
+        }
+
+        return $actor;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Podcast;
 use App\Services\Functional\AdminAuthService;
 use App\Services\Functional\UserAuthService;
 use App\Services\Functional\CompanyAuthService;
@@ -194,6 +195,7 @@ class AppServiceProvider extends ServiceProvider
 
          Relation::morphMap([
             'podcast' => Podcast::class,
+            'lesson' => Lesson::class,
         ]);
     }
 }

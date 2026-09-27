@@ -94,4 +94,47 @@ class LessonPolicy
 
         return false;
     }
+
+
+    public function manageVideo(
+        User|Admin|Instructor $actor,
+        Lesson $lesson
+    ): bool {
+        $lesson->loadMissing('course');
+
+        $course = $lesson->course;
+
+        if (! $course) {
+            return false;
+        }
+
+        if ($actor instanceof Admin) {
+            return true;
+        }
+
+        if ($actor instanceof Instructor) {
+            $isAssignedToCourse =
+                CourseInstructor::query()
+                    ->where(
+                        'course_id',
+                        $lesson->course_id
+                    )
+                    ->where(
+                        'instructor_id',
+                        $actor->id
+                    )
+                    ->exists();
+
+            $isCourseCreator =
+                isset($course->created_by) &&
+                (int) $course->created_by ===
+                (int) $actor->id;
+
+            return
+                $isAssignedToCourse ||
+                $isCourseCreator;
+        }
+
+        return false;
+    }
 }

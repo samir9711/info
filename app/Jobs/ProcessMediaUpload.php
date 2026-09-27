@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Lesson;
 use App\Models\MediaUpload;
 use App\Models\Podcast;
 use Illuminate\Bus\Queueable;
@@ -38,6 +39,8 @@ class ProcessMediaUpload implements ShouldQueue
         'video/webm' => 'webm',
         'video/x-matroska' => 'mkv',
         'video/x-msvideo' => 'avi',
+        'video/ogg' => 'ogv',
+        'application/ogg' => 'ogv',
     ];
 
     public function __construct(
@@ -51,15 +54,18 @@ class ProcessMediaUpload implements ShouldQueue
             $this->mediaUploadId
         );
 
-        /*
+        /**
          * انتهت المعالجة سابقًا.
          */
         if ($mediaUpload->status === 'ready') {
             return;
         }
 
-        /*
-         * لا نعالج Session ما زالت pending/uploading.
+        /**
+         * لا نعالج Session ما زالت:
+         *
+         * pending
+         * uploading
          */
         if (! in_array(
             $mediaUpload->status,
@@ -74,16 +80,38 @@ class ProcessMediaUpload implements ShouldQueue
         }
 
         try {
-            if (
-                $mediaUpload->model_type !==
-                'podcast'
-            ) {
+            /**
+             * الأنواع المدعومة حاليًا.
+             */
+            if (! in_array(
+                $mediaUpload->model_type,
+                [
+                    'podcast',
+                    'lesson',
+                ],
+                true
+            )) {
                 throw new RuntimeException(
                     'Unsupported media upload model type.'
                 );
             }
 
-            /*
+            /**
+             * تحديد Disk + Folder النهائي
+             * حسب نوع الفيديو.
+             */
+            [
+                $destinationDiskName,
+                $folder,
+            ] = $this->destinationFor(
+                $mediaUpload
+            );
+
+            $destinationDisk = Storage::disk(
+                $destinationDiskName
+            );
+
+            /**
              * مجلد tus المؤقت.
              */
             $tusDirectory = realpath(
@@ -96,11 +124,12 @@ class ProcessMediaUpload implements ShouldQueue
                 );
             }
 
-            /*
-             * نحاول أولًا إيجاد الملف داخل tus.
+            /**
+             * في post-finish يكون path عبارة عن
+             * absolute path داخل /var/lib/tusd/uploads.
              *
-             * لكن في retry محتمل أن يكون الملف
-             * قد نُقل بالفعل إلى storage/app/public.
+             * في retry قد يكون path أصبح relative path
+             * بعد أن نقلناه إلى final storage.
              */
             $sourcePath = $mediaUpload->path;
 
@@ -119,16 +148,16 @@ class ProcessMediaUpload implements ShouldQueue
                 );
 
                 if ($resolved !== false) {
-                    $realSourcePath =
-                        $resolved;
+                    $realSourcePath = $resolved;
                 }
             }
 
-            /*
-             * =========================================
-             * CASE 1:
+            /**
+             * ==================================================
+             * CASE 1
+             *
              * الملف ما زال موجودًا داخل tusd.
-             * =========================================
+             * ==================================================
              */
             if ($realSourcePath) {
                 if (! str_starts_with(
@@ -150,17 +179,26 @@ class ProcessMediaUpload implements ShouldQueue
                     $mediaUpload
                 );
 
+                /**
+                 * Podcast:
+                 *
+                 * podcasts/{uuid}.mp4
+                 *
+                 * Lesson:
+                 *
+                 * lessons/{lessonId}/{uuid}.mp4
+                 */
                 $relativePath =
-                    'podcasts/' .
+                    $folder .
+                    '/' .
                     $mediaUpload->uuid .
                     '.' .
                     $extension;
 
                 $destinationPath =
-                    Storage::disk('public')
-                        ->path(
-                            $relativePath
-                        );
+                    $destinationDisk->path(
+                        $relativePath
+                    );
 
                 File::ensureDirectoryExists(
                     dirname(
@@ -171,26 +209,34 @@ class ProcessMediaUpload implements ShouldQueue
                 );
 
                 $mediaUpload->update([
-                    'status' =>
-                        'processing',
+                    'status' => 'processing',
                 ]);
 
-                /*
-                 * ربما retry حصل بعد إنشاء
-                 * الملف النهائي بالفعل.
+                /**
+                 * إذا Retry حدث بعد إنشاء
+                 * final file وقبل تحديث DB.
                  */
                 if (
-                    is_file(
-                        $destinationPath
-                    ) &&
-                    (int) filesize(
-                        $destinationPath
-                    ) ===
-                    (int) $mediaUpload->size
+                    is_file($destinationPath) &&
+                    filesize($destinationPath) !== false &&
+                    (int) filesize($destinationPath) ===
+                        (int) $mediaUpload->size
                 ) {
-                    /*
-                     * الملف النهائي موجود وصحيح،
-                     * لا نعيد نسخه.
+                    /**
+                     * نتأكد أن final file نفسه
+                     * فيديو صحيح.
+                     */
+                    [
+                        $actualSize,
+                        $actualMime,
+                        $extension,
+                    ] = $this->inspectVideo(
+                        $destinationPath,
+                        $mediaUpload
+                    );
+
+                    /**
+                     * لا نحتاج المصدر المؤقت بعد الآن.
                      */
                     @unlink(
                         $realSourcePath
@@ -201,9 +247,9 @@ class ProcessMediaUpload implements ShouldQueue
                         '.info'
                     );
                 } else {
-                    /*
-                     * إن وجد ملف ناقص من محاولة
-                     * سابقة نحذفه.
+                    /**
+                     * إذا كان هناك final file ناقص
+                     * من محاولة سابقة نحذفه.
                      */
                     if (
                         is_file(
@@ -215,18 +261,20 @@ class ProcessMediaUpload implements ShouldQueue
                         );
                     }
 
-                    /*
-                     * الأفضل rename لأنه على نفس
-                     * filesystem عندك.
+                    /**
+                     * نفس filesystem عندك حاليًا،
+                     * لذلك rename هي الأسرع.
                      */
                     $moved = @rename(
                         $realSourcePath,
                         $destinationPath
                     );
 
-                    /*
-                     * fallback إذا تغيّر filesystem
-                     * في المستقبل.
+                    /**
+                     * Fallback:
+                     *
+                     * إذا أصبح source/destination
+                     * على filesystem مختلف مستقبلًا.
                      */
                     if (! $moved) {
                         $temporaryDestination =
@@ -280,6 +328,10 @@ class ProcessMediaUpload implements ShouldQueue
                             fclose($output);
                         }
 
+                        /**
+                         * تحقق من الحجم قبل جعل
+                         * .part هو الملف النهائي.
+                         */
                         $temporarySize =
                             filesize(
                                 $temporaryDestination
@@ -288,10 +340,8 @@ class ProcessMediaUpload implements ShouldQueue
                         if (
                             $temporarySize ===
                                 false ||
-                            (int)
-                                $temporarySize !==
-                            (int)
-                                $actualSize
+                            (int) $temporarySize !==
+                                (int) $actualSize
                         ) {
                             @unlink(
                                 $temporaryDestination
@@ -302,8 +352,8 @@ class ProcessMediaUpload implements ShouldQueue
                             );
                         }
 
-                        /*
-                         * atomic final rename.
+                        /**
+                         * Atomic finalization.
                          */
                         if (! @rename(
                             $temporaryDestination,
@@ -323,39 +373,50 @@ class ProcessMediaUpload implements ShouldQueue
                         );
                     }
 
-                    /*
+                    /**
                      * حذف tus sidecar.
                      */
                     @unlink(
                         $realSourcePath .
                         '.info'
                     );
-                }
 
-                /*
-                 * تحقق نهائي بعد النقل.
-                 */
-                [
-                    $actualSize,
-                    $actualMime,
-                    $extension,
-                ] = $this->inspectVideo(
-                    $destinationPath,
-                    $mediaUpload
-                );
+                    /**
+                     * تحقق نهائي من الملف
+                     * بعد النقل.
+                     */
+                    [
+                        $actualSize,
+                        $actualMime,
+                        $extension,
+                    ] = $this->inspectVideo(
+                        $destinationPath,
+                        $mediaUpload
+                    );
+                }
             }
 
-            /*
-             * =========================================
-             * CASE 2:
-             * tus source اختفى، غالبًا بسبب retry
-             * بعد نجاح rename وقبل تحديث DB.
-             * =========================================
+            /**
+             * ==================================================
+             * CASE 2
+             *
+             * tus source اختفى.
+             *
+             * هذا يمكن أن يحدث إذا:
+             *
+             * rename نجح
+             * ثم Worker crash
+             * قبل تحديث DB.
+             *
+             * نبحث عن final deterministic file.
+             * ==================================================
              */
             else {
                 $existing =
                     $this->findExistingFinalVideo(
-                        $mediaUpload
+                        $mediaUpload,
+                        $destinationDiskName,
+                        $folder
                     );
 
                 if (! $existing) {
@@ -365,7 +426,9 @@ class ProcessMediaUpload implements ShouldQueue
                 }
 
                 $relativePath =
-                    $existing['relative_path'];
+                    $existing[
+                        'relative_path'
+                    ];
 
                 $destinationPath =
                     $existing[
@@ -382,153 +445,35 @@ class ProcessMediaUpload implements ShouldQueue
                 );
             }
 
-            /*
-             * =========================================
-             * Podcast update
-             * =========================================
+            /**
+             * ==================================================
+             * FINALIZATION
+             * ==================================================
              */
-            $podcast =
-                Podcast::findOrFail(
-                    $mediaUpload->model_id
-                );
 
-            /*
-             * تأكد أن Podcast تشير إلى MP4
-             * الحالي.
-             */
             if (
-                $podcast->video !==
-                $relativePath
+                $mediaUpload->model_type ===
+                'podcast'
             ) {
-                $podcast->update([
-                    'video' =>
-                        $relativePath,
-                ]);
-            }
-
-            /*
-             * المسار المتوقع لهذا Upload من HLS.
-             */
-            $expectedHlsPath =
-                sprintf(
-                    'podcast-hls/podcasts/%d/%s',
-                    $podcast->id,
-                    $mediaUpload->uuid
-                );
-
-            /*
-             * إذا Retry وصل هنا بعد أن HLS
-             * انتهت أصلًا، لا نعيد التحويل.
-             */
-            if (
-                $podcast->hls_status ===
-                    'ready' &&
-                $podcast->hls_path ===
-                    $expectedHlsPath
-            ) {
-                $mediaUpload->update([
-                    'path' =>
-                        $relativePath,
-
-                    'mime_type' =>
-                        $actualMime,
-
-                    'uploaded_size' =>
-                        $actualSize,
-
-                    'status' =>
-                        'ready',
-
-                    'error' => null,
-
-                    'failed_at' => null,
-                ]);
-
-                return;
-            }
-
-            /*
-             * إذا Job الـ HLS تعمل حاليًا
-             * لنفس الفيديو، لا نطلق واحدة أخرى.
-             */
-            if (
-                $podcast->video ===
-                    $relativePath &&
-                $podcast->hls_status ===
-                    'processing'
-            ) {
-                $mediaUpload->update([
-                    'path' =>
-                        $relativePath,
-
-                    'mime_type' =>
-                        $actualMime,
-
-                    'uploaded_size' =>
-                        $actualSize,
-
-                    'status' =>
-                        'processing',
-
-                    'error' => null,
-
-                    'failed_at' => null,
-                ]);
-
-                return;
-            }
-
-            /*
-             * تجهيز Podcast لمرحلة HLS.
-             *
-             * لا نمسح hls_path هنا لأن Job
-             * تحتاج المسار القديم حتى تحذفه
-             * بعد نجاح النسخة الجديدة.
-             */
-            $podcast->forceFill([
-                'hls_disk' =>
-                    'public',
-
-                'hls_status' =>
-                    'pending',
-
-                'hls_error' =>
-                    null,
-
-                'hls_processed_at' =>
-                    null,
-            ])->save();
-
-            /*
-             * MP4 جاهز، لكن HLS لم تنتهِ.
-             *
-             * لذلك status تبقى processing.
-             */
-            $mediaUpload->update([
-                'path' =>
+                $this->finalizePodcastUpload(
+                    $mediaUpload,
                     $relativePath,
-
-                'mime_type' =>
                     $actualMime,
+                    $actualSize
+                );
 
-                'uploaded_size' =>
-                    $actualSize,
+                return;
+            }
 
-                'status' =>
-                    'processing',
-
-                'error' => null,
-
-                'failed_at' => null,
-            ]);
-
-            /*
-             * المرحلة الثقيلة تنتقل إلى
-             * video queue.
+            /**
+             * Lesson
              */
-            ConvertPodcastVideoToHls::dispatch(
-                $podcast->id,
-                $mediaUpload->id
+            $this->finalizeLessonUpload(
+                $mediaUpload,
+                $relativePath,
+                $actualMime,
+                $actualSize,
+                $destinationDiskName
             );
 
         } catch (Throwable $e) {
@@ -552,7 +497,449 @@ class ProcessMediaUpload implements ShouldQueue
     }
 
     /**
-     * فحص حجم الملف وMIME الحقيقي.
+     * ======================================================
+     * PODCAST FINALIZATION
+     * ======================================================
+     */
+    private function finalizePodcastUpload(
+        MediaUpload $mediaUpload,
+        string $relativePath,
+        string $actualMime,
+        int $actualSize
+    ): void {
+        $podcast =
+            Podcast::query()
+                ->findOrFail(
+                    $mediaUpload->model_id
+                );
+
+        /**
+         * ربط MP4 النهائي بالـ Podcast.
+         */
+        if (
+            $podcast->video !==
+            $relativePath
+        ) {
+            $podcast->update([
+                'video' =>
+                    $relativePath,
+            ]);
+        }
+
+        /**
+         * Podcast HLS له مسار خاص
+         * بكل Upload UUID.
+         */
+        $expectedHlsPath =
+            sprintf(
+                'podcast-hls/podcasts/%d/%s',
+                $podcast->id,
+                $mediaUpload->uuid
+            );
+
+        /**
+         * Retry بعد نجاح HLS.
+         */
+        if (
+            $podcast->hls_status ===
+                'ready' &&
+            $podcast->hls_path ===
+                $expectedHlsPath
+        ) {
+            $masterPath =
+                trim(
+                    $expectedHlsPath,
+                    '/'
+                ) .
+                '/master.m3u8';
+
+            if (
+                Storage::disk('public')
+                    ->exists(
+                        $masterPath
+                    )
+            ) {
+                $mediaUpload->update([
+                    'path' =>
+                        $relativePath,
+
+                    'mime_type' =>
+                        $actualMime,
+
+                    'uploaded_size' =>
+                        $actualSize,
+
+                    'status' =>
+                        'ready',
+
+                    'error' =>
+                        null,
+
+                    'failed_at' =>
+                        null,
+                ]);
+
+                return;
+            }
+        }
+
+        /**
+         * إذا HLS Job تعمل بالفعل
+         * لنفس الفيديو لا نطلق واحدة ثانية.
+         */
+        if (
+            $podcast->video ===
+                $relativePath &&
+            $podcast->hls_status ===
+                'processing'
+        ) {
+            $mediaUpload->update([
+                'path' =>
+                    $relativePath,
+
+                'mime_type' =>
+                    $actualMime,
+
+                'uploaded_size' =>
+                    $actualSize,
+
+                'status' =>
+                    'processing',
+
+                'error' =>
+                    null,
+
+                'failed_at' =>
+                    null,
+            ]);
+
+            return;
+        }
+
+        /**
+         * تجهيز Podcast للـ HLS.
+         */
+        $podcast->forceFill([
+            'hls_disk' =>
+                'public',
+
+            'hls_status' =>
+                'pending',
+
+            'hls_error' =>
+                null,
+
+            'hls_processed_at' =>
+                null,
+        ])->save();
+
+        /**
+         * MP4 جاهز لكن HLS لم تنته بعد.
+         */
+        $mediaUpload->update([
+            'path' =>
+                $relativePath,
+
+            'mime_type' =>
+                $actualMime,
+
+            'uploaded_size' =>
+                $actualSize,
+
+            'status' =>
+                'processing',
+
+            'error' =>
+                null,
+
+            'failed_at' =>
+                null,
+        ]);
+
+        ConvertPodcastVideoToHls::dispatch(
+            $podcast->id,
+            $mediaUpload->id
+        );
+    }
+
+    /**
+     * ======================================================
+     * LESSON FINALIZATION
+     * ======================================================
+     */
+    private function finalizeLessonUpload(
+        MediaUpload $mediaUpload,
+        string $relativePath,
+        string $actualMime,
+        int $actualSize,
+        string $sourceDiskName
+    ): void {
+        $lesson =
+            Lesson::query()
+                ->findOrFail(
+                    $mediaUpload->model_id
+                );
+
+        /**
+         * ==================================================
+         * RETRY AFTER SUCCESS
+         *
+         * إذا هذا هو نفس source الحالي للدرس
+         * و HLS أصبحت ready بالفعل،
+         * فلا نعيد FFmpeg.
+         * ==================================================
+         */
+        if (
+            $lesson->video_source_disk ===
+                $sourceDiskName &&
+            $lesson->video_source_path ===
+                $relativePath &&
+            $lesson->hls_status ===
+                'ready' &&
+            $lesson->hls_path
+        ) {
+            $hlsDiskName =
+                $lesson->hls_disk
+                    ?: config(
+                        'lesson_video.hls_disk'
+                    );
+
+            $masterPath =
+                trim(
+                    $lesson->hls_path,
+                    '/'
+                ) .
+                '/master.m3u8';
+
+            if (
+                Storage::disk(
+                    $hlsDiskName
+                )->exists(
+                    $masterPath
+                )
+            ) {
+                $mediaUpload->update([
+                    'path' =>
+                        $relativePath,
+
+                    'mime_type' =>
+                        $actualMime,
+
+                    'uploaded_size' =>
+                        $actualSize,
+
+                    'status' =>
+                        'ready',
+
+                    'error' =>
+                        null,
+
+                    'failed_at' =>
+                        null,
+                ]);
+
+                return;
+            }
+        }
+
+        /**
+         * ==================================================
+         * HLS JOB ALREADY RUNNING
+         * ==================================================
+         */
+        if (
+            $lesson->video_source_disk ===
+                $sourceDiskName &&
+            $lesson->video_source_path ===
+                $relativePath &&
+            $lesson->hls_status ===
+                'processing'
+        ) {
+            $mediaUpload->update([
+                'path' =>
+                    $relativePath,
+
+                'mime_type' =>
+                    $actualMime,
+
+                'uploaded_size' =>
+                    $actualSize,
+
+                'status' =>
+                    'processing',
+
+                'error' =>
+                    null,
+
+                'failed_at' =>
+                    null,
+            ]);
+
+            return;
+        }
+
+        /**
+         * احتفظ بمصدر الفيديو القديم
+         * حتى نربط المصدر الجديد.
+         */
+        $oldSourceDisk =
+            $lesson->video_source_disk;
+
+        $oldSourcePath =
+            $lesson->video_source_path;
+
+        /**
+         * المصدر الجديد للدرس.
+         */
+        $lesson->forceFill([
+            'video_source_disk' =>
+                $sourceDiskName,
+
+            'video_source_path' =>
+                $relativePath,
+
+            'hls_disk' =>
+                config(
+                    'lesson_video.hls_disk'
+                ),
+
+            /**
+             * لا نمسح hls_path.
+             *
+             * ConvertLessonVideoToHls الحالية
+             * ستستبدل HLS القديم فقط
+             * بعد نجاح التحويل الجديد.
+             */
+            'hls_status' =>
+                'pending',
+
+            'hls_error' =>
+                null,
+
+            'hls_processed_at' =>
+                null,
+        ])->save();
+
+        /**
+         * Source upload انتهى،
+         * لكن HLS لم تنته بعد.
+         */
+        $mediaUpload->update([
+            'path' =>
+                $relativePath,
+
+            'mime_type' =>
+                $actualMime,
+
+            'uploaded_size' =>
+                $actualSize,
+
+            'status' =>
+                'processing',
+
+            'error' =>
+                null,
+
+            'failed_at' =>
+                null,
+        ]);
+
+        /**
+         * تحويل الدرس إلى HLS.
+         *
+         * سنعدل ConvertLessonVideoToHls
+         * في الخطوة التالية لتقبل
+         * mediaUploadId أيضًا.
+         */
+        ConvertLessonVideoToHls::dispatch(
+            $lesson->id,
+            $mediaUpload->id
+        );
+
+        /**
+         * حذف المصدر القديم بعد أن
+         * أصبح المصدر الجديد محفوظًا
+         * ومربوطًا بالدرس.
+         *
+         * فشل Cleanup لا يفشل Upload الجديد.
+         */
+        if (
+            $oldSourceDisk &&
+            $oldSourcePath &&
+            (
+                $oldSourceDisk !==
+                    $sourceDiskName ||
+                $oldSourcePath !==
+                    $relativePath
+            )
+        ) {
+            try {
+                Storage::disk(
+                    $oldSourceDisk
+                )->delete(
+                    $oldSourcePath
+                );
+            } catch (Throwable) {
+                // Cleanup failure must not fail the upload.
+            }
+        }
+    }
+
+    /**
+     * تحديد مكان حفظ الفيديو النهائي
+     * حسب نوع الـ MediaUpload.
+     *
+     * @return array{0:string,1:string}
+     */
+    private function destinationFor(
+        MediaUpload $mediaUpload
+    ): array {
+        if (
+            $mediaUpload->model_type ===
+            'podcast'
+        ) {
+            return [
+                'public',
+                'podcasts',
+            ];
+        }
+
+        if (
+            $mediaUpload->model_type ===
+            'lesson'
+        ) {
+            $diskName = config(
+                'lesson_video.source_disk'
+            );
+
+            if (
+                ! is_string($diskName) ||
+                $diskName === ''
+            ) {
+                throw new RuntimeException(
+                    'Lesson source disk is not configured.'
+                );
+            }
+
+            return [
+                $diskName,
+
+                'lessons/' .
+                    $mediaUpload->model_id,
+            ];
+        }
+
+        throw new RuntimeException(
+            'Unsupported media upload model type.'
+        );
+    }
+
+    /**
+     * فحص:
+     *
+     * - وجود الملف
+     * - الحجم
+     * - MIME الحقيقي
      *
      * @return array{0:int,1:string,2:string}
      */
@@ -588,9 +975,10 @@ class ProcessMediaUpload implements ShouldQueue
             );
         }
 
-        $finfo = new \finfo(
-            FILEINFO_MIME_TYPE
-        );
+        $finfo =
+            new \finfo(
+                FILEINFO_MIME_TYPE
+            );
 
         $actualMime =
             $finfo->file(
@@ -631,7 +1019,7 @@ class ProcessMediaUpload implements ShouldQueue
     }
 
     /**
-     * البحث عن الملف النهائي عند retry
+     * البحث عن final file في Retry
      * إذا اختفى tus source بعد rename.
      *
      * @return array{
@@ -640,15 +1028,18 @@ class ProcessMediaUpload implements ShouldQueue
      * }|null
      */
     private function findExistingFinalVideo(
-        MediaUpload $mediaUpload
+        MediaUpload $mediaUpload,
+        string $diskName,
+        string $folder
     ): ?array {
         $disk =
             Storage::disk(
-                'public'
+                $diskName
             );
 
-        /*
-         * إذا DB تحولت أصلًا إلى relative path.
+        /**
+         * DB قد تحتوي بالفعل
+         * على relative final path.
          */
         if (
             is_string(
@@ -663,37 +1054,54 @@ class ProcessMediaUpload implements ShouldQueue
                 $mediaUpload->path
             )
         ) {
-            return [
-                'relative_path' =>
-                    $mediaUpload->path,
+            $absolutePath =
+                $disk->path(
+                    $mediaUpload->path
+                );
 
-                'absolute_path' =>
-                    $disk->path(
-                        $mediaUpload->path
-                    ),
-            ];
+            $size =
+                filesize(
+                    $absolutePath
+                );
+
+            if (
+                $size !== false &&
+                (int) $size ===
+                    (int) $mediaUpload->size
+            ) {
+                return [
+                    'relative_path' =>
+                        $mediaUpload->path,
+
+                    'absolute_path' =>
+                        $absolutePath,
+                ];
+            }
         }
 
-        /*
-         * وإلا نبحث بالـ deterministic UUID.
+        /**
+         * وإلا نبحث بالمسار deterministic:
+         *
+         * {folder}/{uuid}.{ext}
          */
         foreach (
-            array_values(
-                self::VIDEO_EXTENSIONS
+            array_unique(
+                array_values(
+                    self::VIDEO_EXTENSIONS
+                )
             )
             as $extension
         ) {
             $relativePath =
-                'podcasts/' .
+                $folder .
+                '/' .
                 $mediaUpload->uuid .
                 '.' .
                 $extension;
 
-            if (
-                ! $disk->exists(
-                    $relativePath
-                )
-            ) {
+            if (! $disk->exists(
+                $relativePath
+            )) {
                 continue;
             }
 
@@ -710,8 +1118,7 @@ class ProcessMediaUpload implements ShouldQueue
             if (
                 $size !== false &&
                 (int) $size ===
-                (int)
-                    $mediaUpload->size
+                    (int) $mediaUpload->size
             ) {
                 return [
                     'relative_path' =>

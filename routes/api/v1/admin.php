@@ -307,7 +307,7 @@ Route::prefix('admin')->group(function () {
 
 });
 
-    Route::middleware('auth:admin')->group(function () {
+    Route::middleware('auth:admin,instructor')->group(function () {
 
             Route::post('/media-uploads',[MediaUploadController::class, 'create']);
 
