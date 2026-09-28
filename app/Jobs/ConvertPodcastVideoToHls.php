@@ -814,4 +814,66 @@ class ConvertPodcastVideoToHls implements ShouldQueue, ShouldBeUnique
             ]
         );
     }
+
+    public function failed(
+        ?Throwable $exception
+    ): void {
+        $mediaUpload =
+            MediaUpload::query()
+                ->find(
+                    $this->mediaUploadId
+                );
+
+        $podcast =
+            Podcast::query()
+                ->find(
+                    $this->podcastId
+                );
+
+        $message =
+            $exception
+                ? mb_substr(
+                    $exception->getMessage(),
+                    0,
+                    10000
+                )
+                : 'Podcast HLS processing failed.';
+
+        if (
+            $mediaUpload &&
+            $mediaUpload->status !== 'ready'
+        ) {
+            $mediaUpload->update([
+                'status' =>
+                    'failed',
+
+                'error' =>
+                    $message,
+
+                'failed_at' =>
+                    now(),
+            ]);
+        }
+
+        
+        if (
+            $podcast &&
+            $mediaUpload &&
+            $podcast->video ===
+                $mediaUpload->path &&
+            $podcast->hls_status !==
+                'ready'
+        ) {
+            $podcast->forceFill([
+                'hls_status' =>
+                    'failed',
+
+                'hls_error' =>
+                    $message,
+
+                'hls_processed_at' =>
+                    null,
+            ])->save();
+        }
+    }
 }
