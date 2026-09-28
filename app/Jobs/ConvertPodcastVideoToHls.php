@@ -25,8 +25,10 @@ class ConvertPodcastVideoToHls implements ShouldQueue, ShouldBeUnique
     use SerializesModels;
 
 
-    public int $uniqueFor = 7500;
-    public int $timeout = 7200;
+    public int $uniqueFor = 22200;
+    public int $timeout = 21600;
+
+    public bool $failOnTimeout = true;
 
     public int $tries = 2;
 
@@ -63,7 +65,7 @@ class ConvertPodcastVideoToHls implements ShouldQueue, ShouldBeUnique
                 $this->mediaUploadId
             );
 
-        
+
         $expectedHlsPath = sprintf(
             'podcast-hls/podcasts/%d/%s',
             $podcast->id,
