@@ -27,7 +27,7 @@ class ConvertLessonVideoToHls implements ShouldQueue, ShouldBeUnique
     /**
      * FFmpeg قد يحتاج وقتًا طويلًا مع الفيديوهات الكبيرة.
      */
-    public int $timeout = 7200;
+    public int $timeout = 21600;
 
     /**
      * عدد محاولات الـ Job.
@@ -43,7 +43,7 @@ class ConvertLessonVideoToHls implements ShouldQueue, ShouldBeUnique
      * منع تشغيل Job أخرى لنفس الدرس
      * لمدة أطول قليلًا من timeout.
      */
-    public int $uniqueFor = 7500;
+    public int $uniqueFor = 22200;
 
     public function __construct(
         public readonly int $lessonId,
